@@ -1,54 +1,10 @@
 import { google } from 'googleapis';
+import { getOAuthClient } from '@/lib/google-auth';
+import { extractSenderEmail, extractSenderName } from '@/lib/utils';
 
-export const SCOPES = [
-  'https://www.googleapis.com/auth/gmail.readonly',
-  'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/userinfo.email',
-  'https://www.googleapis.com/auth/userinfo.profile',
-  'https://www.googleapis.com/auth/drive.readonly',
-  'https://www.googleapis.com/auth/drive.file',
-  'https://www.googleapis.com/auth/photoslibrary.readonly',
-];
-
-function getOAuth2Client() {
-  const clientId = process.env.GOOGLE_CLIENT_ID || '';
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || '';
-
-  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
-}
-
-export function getAuthUrl() {
-  const oauth2Client = getOAuth2Client();
-  const url = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-    prompt: 'consent',
-  });
-  return url;
-}
-
-export async function getTokens(code: string) {
-  const oauth2Client = getOAuth2Client();
-  const { tokens } = await oauth2Client.getToken(code);
-  return tokens;
-}
-
-export async function getGmailClient(accessToken: string, refreshToken?: string | null) {
-  const oauth2Client = getOAuth2Client();
-  oauth2Client.setCredentials({
-    access_token: accessToken,
-    refresh_token: refreshToken || undefined,
-  });
-
+function getGmailClient(accessToken: string, refreshToken?: string | null) {
+  const oauth2Client = getOAuthClient(accessToken, refreshToken);
   return google.gmail({ version: 'v1', auth: oauth2Client });
-}
-
-export async function refreshAccessToken(refreshToken: string) {
-  const oauth2Client = getOAuth2Client();
-  oauth2Client.setCredentials({ refresh_token: refreshToken });
-  const { credentials } = await oauth2Client.refreshAccessToken();
-  return credentials;
 }
 
 export interface GmailMessage {
@@ -85,16 +41,6 @@ const JUNK_KEYWORDS = [
   'limited time', 'urgent', 'exclusive deal', 'you won', 'prize',
   'lottery', 'cash bonus', 'make money', 'crypto', 'bitcoin', 'earn money',
 ];
-
-function extractSenderEmail(from: string): string {
-  const match = from.match(/<([^>]+)>/);
-  return match ? match[1] : from;
-}
-
-function extractSenderName(from: string): string {
-  const match = from.match(/^"?([^"<]+)"?\s*</);
-  return match ? match[1].trim() : from.split('@')[0];
-}
 
 function extractUnsubscribeLinks(payload: any): string[] {
   const links: string[] = [];
@@ -188,7 +134,7 @@ function categorizeEmail(from: string, subject: string, snippet: string, labelId
 }
 
 export async function scanEmails(accessToken: string, refreshToken?: string | null, maxResults: number = 100) {
-  const gmail = await getGmailClient(accessToken, refreshToken);
+  const gmail = getGmailClient(accessToken, refreshToken);
   const results: GmailMessage[] = [];
 
   // Query for promotional, update, and potentially spam emails
@@ -278,7 +224,7 @@ export async function scanEmails(accessToken: string, refreshToken?: string | nu
 }
 
 export async function deleteEmails(accessToken: string, refreshToken: string | null | undefined, messageIds: string[]) {
-  const gmail = await getGmailClient(accessToken, refreshToken);
+  const gmail = getGmailClient(accessToken, refreshToken);
   const results: { success: string[]; failed: string[] } = { success: [], failed: [] };
 
   // Gmail API allows batch deletion
@@ -298,7 +244,7 @@ export async function deleteEmails(accessToken: string, refreshToken: string | n
 }
 
 export async function bulkDeleteByQuery(accessToken: string, refreshToken: string | null | undefined, queries: string[]) {
-  const gmail = await getGmailClient(accessToken, refreshToken);
+  const gmail = getGmailClient(accessToken, refreshToken);
   let totalDeleted = 0;
 
   for (const query of queries) {

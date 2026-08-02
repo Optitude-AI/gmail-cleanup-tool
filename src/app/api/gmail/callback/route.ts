@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTokens } from '@/lib/gmail';
+import { exchangeCodeAndUserInfo } from '@/lib/google-auth';
 import { db } from '@/lib/db';
-import { google } from 'googleapis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,20 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authorization code is required' }, { status: 400 });
     }
 
-    const tokens = await getTokens(code);
-
-    // Get user info from Google
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
-    );
-    oauth2Client.setCredentials(tokens);
-    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
-    const userInfo = await oauth2.userinfo.get();
-
-    const email = userInfo.data.email || '';
-    const name = userInfo.data.name || '';
+    const { tokens, email, name } = await exchangeCodeAndUserInfo(code);
 
     // Store or update account
     const account = await db.gmailAccount.upsert({

@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { getValidTokens, getOAuthClient } from '@/lib/google-auth';
+import { formatBytes } from '@/lib/utils';
 
 export interface PhotoItem {
   id: string;
@@ -22,14 +23,6 @@ export interface PhotoStats {
   byMonth: { month: string; count: number; size: number }[];
   largePhotos: number;
   largePhotoSize: number;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
 export async function scanPhotos(accountId: string, maxResults: number = 500): Promise<{ photos: PhotoItem[]; stats: PhotoStats }> {

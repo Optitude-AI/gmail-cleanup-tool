@@ -1,0 +1,344 @@
+   400→                        <Card className={`border ${SEV[forecast.severity]?.bg || SEV.low.bg} min-w-[220px]`}>
+   401→                          <CardContent className="p-4">
+   402→                            <div className="flex items-center gap-2 mb-2">{SEV[forecast.severity]?.icon}<span className={`text-xs font-semibold uppercase ${SEV[forecast.severity]?.text}`}>Storage Forecast</span></div>
+   403→                            <p className="text-sm font-bold">{forecast.daysRemaining > 0 ? `${forecast.daysRemaining} days remaining` : 'Storage full!'}</p>
+   404→                            {forecast.daysRemaining > 0 && <p className="text-xs text-muted-foreground mt-1">Full by {new Date(forecast.projectedFullDate).toLocaleDateString()}</p>}
+   405→                            <p className="text-xs text-muted-foreground mt-1">Growing ~{forecast.weeklyGrowthFormatted}/week</p>
+   406→                            <p className="text-xs mt-2">{forecast.recommendation}</p>
+   407→                          </CardContent>
+   408→                        </Card>
+   409→                      )}
+   410→                    </div>
+   411→                  </CardContent>
+   412→                </Card>
+   413→                {/* Quick Actions */}
+   414→                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+   415→                  {[
+   416→                    { icon: <ScanSearch className="h-5 w-5" />, t: 'Scan Gmail', d: 'Find junk & subscriptions', c: scanGmail, loading: scanningGmail },
+   417→                    { icon: <FolderOpen className="h-5 w-5" />, t: 'Scan Drive', d: 'Find large & duplicate files', c: scanDrive, loading: scanningDrive },
+   418→                    { icon: <Camera className="h-5 w-5" />, t: 'Scan Photos', d: 'Photo storage analysis', c: scanPhotos, loading: scanningPhotos },
+   419→                    { icon: <Wand2 className="h-5 w-5" />, t: 'Smart Cleanup', d: 'AI-powered cleanup wizard', c: () => setTab('wizard'), loading: false },
+   420→                  ].map(a => (
+   421→                    <Card key={a.t} className="cursor-pointer hover:shadow-md transition-shadow" onClick={a.loading ? undefined : a.c}>
+   422→                      <CardContent className="p-4 flex items-center gap-3">
+   423→                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0">{a.loading ? <Loader2 className="h-5 w-5 animate-spin text-orange-500" /> : a.icon}</div>
+   424→                        <div><p className="text-sm font-semibold">{a.t}</p><p className="text-xs text-muted-foreground">{a.d}</p></div>
+   425→                      </CardContent>
+   426→                    </Card>
+   427→                  ))}
+   428→                </div>
+   429→              </>
+   430→            )}
+   431→            {!loadingStorage && !unifiedStorage && (
+   432→              <div className="flex flex-col items-center py-12 gap-4">
+   433→                <p className="text-muted-foreground">Connect your Google account and load storage data to see your unified overview.</p>
+   434→                <Button onClick={loadStorage} className="gap-2"><Gauge className="h-4 w-4" />Load Storage Data</Button>
+   435→              </div>
+   436→            )}
+   437→          </TabsContent>
+   438→
+   439→          {/* ═══ GMAIL TAB ═══ */}
+   440→          <TabsContent value="gmail" className="mt-6 space-y-6">
+   441→            {!gmailStats && !scanningGmail && <div className="flex flex-col items-center py-12 gap-4"><Sparkles className="h-10 w-10 text-red-500" /><h2 className="text-xl font-bold">Scan Gmail</h2><p className="text-slate-600 dark:text-slate-400 text-center max-w-md">Find subscriptions, promotional emails, junk mail. Unsubscribe or delete in bulk.</p><Button onClick={scanGmail} size="lg" className="gap-2"><ScanSearch className="h-5 w-5" />Scan My Gmail</Button></div>}
+   442→            {scanningGmail && <LoadingSpinner text="Scanning Gmail..." />}
+   443→            {gmailStats && !scanningGmail && (
+   444→              <>
+   445→                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+   446→                  <Card><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Senders</p><p className="text-xl font-bold">{gmailStats.total}</p><p className="text-[10px] text-muted-foreground">{gmailStats.totalEmails} emails</p></CardContent></Card>
+   447→                  {(['subscription', 'promotion', 'sales', 'junk'] as const).map(cat => { const c = GMAIL_CAT[cat]; const n = gmailStats[cat as keyof GmailStats] as number; return <Card key={cat} className={c.border}><CardContent className="p-3"><div className="flex items-center justify-between"><div><p className="text-[10px] font-medium text-muted-foreground uppercase">{c.label}</p><p className="text-xl font-bold">{n}</p></div><span className={c.color}>{c.icon}</span></div></CardContent></Card> })}
+   448→                </div>
+   449→                <div className="flex gap-2 flex-wrap">
+   450→                  <div className="relative flex-1 min-w-[200px]"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input value={gmailSearch} onChange={e => setGmailSearch(e.target.value)} placeholder="Search senders..." className="pl-9" /></div>
+   451→                  {gmailSel.size > 0 && <><Badge variant="secondary">{gmailSel.size}</Badge><Button variant="destructive" size="sm" className="gap-1" onClick={() => openDelete('gmail', `Delete ${gmailSel.size} Senders`, [])}><Trash2 className="h-4 w-4" /></Button><Button variant="outline" size="sm" onClick={() => startBackup(gmailFiltered.filter(r => gmailSel.has(r.id)), 'gmail')} className="gap-1"><ArchiveRestore className="h-4 w-4" /></Button></>}
+   452→                  <Button variant="outline" size="sm" onClick={scanGmail} className="gap-1"><RefreshCw className="h-3 w-3" /></Button>
+   453→                </div>
+   454→                <Tabs value={gmailTab} onValueChange={setGmailTab}>
+   455→                  <TabsList className="grid w-full grid-cols-5">
+   456→                    <TabsTrigger value="all">All</TabsTrigger>
+   457→                    {(['subscription', 'promotion', 'sales', 'junk'] as const).map(c => <TabsTrigger key={c} value={c} className="text-xs">{GMAIL_CAT[c].label}</TabsTrigger>)}
+   458→                  </TabsList>
+   459→                  <TabsContent value={gmailTab} className="mt-3">
+   460→                    <ScrollArea className="max-h-[500px]">
+   461→                      <div className="space-y-2">
+   462→                        {gmailFiltered.map(r => { const c = GMAIL_CAT[r.category] || GMAIL_CAT.subscription; return (
+   463→                          <Card key={r.id} className={`${c.border} ${gmailSel.has(r.id) ? 'ring-2 ring-primary' : ''}`}>
+   464→                            <CardContent className="p-3">
+   465→                              <div className="flex items-center gap-3">
+   466→                                <Checkbox checked={gmailSel.has(r.id)} onCheckedChange={() => gmailToggle(r.id)} />
+   467→                                <div className="flex-1 min-w-0">
+   468→                                  <div className="flex items-center gap-2 flex-wrap"><span className={`font-semibold text-sm ${c.color}`}>{r.senderName || r.senderEmail}</span><Badge variant="outline" className={`${c.bg} ${c.color} border-0 text-[10px] px-1`}>{c.label}</Badge><Badge variant="secondary" className="text-[10px]">{r.emailCount}</Badge></div>
+   469→                                  <p className="text-xs text-muted-foreground truncate">{r.senderEmail}</p>
+   470→                                  {r.unsubscribeUrl && <a href={r.unsubscribeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline mt-1"><Link2 className="h-3 w-3" />Unsubscribe</a>}
+   471→                                </div>
+   472→                              </div>
+   473→                            </CardContent>
+   474→                          </Card>
+   475→                        )})}
+   476→                      </div>
+   477→                    </ScrollArea>
+   478→                  </TabsContent>
+   479→                </Tabs>
+   480→              </>
+   481→            )}
+   482→          </TabsContent>
+   483→
+   484→          {/* ═══ DRIVE TAB ═══ */}
+   485→          <TabsContent value="drive" className="mt-6 space-y-6">
+   486→            {!driveStats && !scanningDrive && <div className="flex flex-col items-center py-12 gap-4"><FolderOpen className="h-10 w-10 text-blue-500" /><h2 className="text-xl font-bold">Scan Drive</h2><Button onClick={scanDrive} size="lg" className="gap-2"><ScanSearch className="h-5 w-5" />Scan Drive</Button></div>}
+   487→            {scanningDrive && <LoadingSpinner text="Scanning Drive..." />}
+   488→            {driveStats && !scanningDrive && (
+   489→              <>
+   490→                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+   491→                  <Card><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Storage</p><p className="text-xl font-bold">{driveStats.totalSizeFormatted}</p></CardContent></Card>
+   492→                  <Card className="border-red-200"><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Trash</p><p className="text-xl font-bold text-red-600">{driveStats.trashedSizeFormatted}</p></CardContent></Card>
+   493→                  <Card className="border-orange-200"><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Large Files</p><p className="text-xl font-bold text-orange-600">{driveStats.largeFiles}</p></CardContent></Card>
+   494→                  <Card className="border-yellow-200"><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Duplicates</p><p className="text-xl font-bold text-yellow-600">{driveStats.duplicatesCount}</p></CardContent></Card>
+   495→                </div>
+   496→                {driveSuggestions.length > 0 && (
+   497→                  <Card><CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><Lightbulb className="h-4 w-4 text-yellow-500" />Smart Suggestions</CardTitle></CardHeader>
+   498→                    <CardContent className="space-y-3">
+   499→                      {driveSuggestions.slice(0, 3).map(s => { const st = SEV[s.severity] || SEV.low; return (
+   500→                        <div key={s.id} className={`rounded-lg border p-3 ${st.bg}`}>
+   501→                          <div className="flex items-start gap-2">{st.icon}<div><p className={`text-sm font-semibold ${st.text}`}>{s.title}</p><p className="text-xs text-muted-foreground mt-1">{s.description}</p></div></div>
+   502→                        </div>
+   503→                      )})}
+   504→                    </CardContent></Card>
+   505→                )}
+   506→                <div className="flex gap-2 flex-wrap">
+   507→                  <div className="relative flex-1 min-w-[200px]"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input value={driveSearch} onChange={e => setDriveSearch(e.target.value)} placeholder="Search files..." className="pl-9" /></div>
+   508→                  <select value={driveFilter} onChange={e => setDriveFilter(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm"><option value="all">All</option><option value="trashed">Trash</option>{driveStats.byType && Object.keys(driveStats.byType).map(t => <option key={t} value={t}>{t}</option>)}</select>
+   509→                  {driveSel.size > 0 && <><Badge variant="secondary">{driveSel.size}</Badge><Button variant="destructive" size="sm" className="gap-1" onClick={() => openDelete('drive', `Delete ${driveSel.size} Files`, Array.from(driveSel))}><Trash2 className="h-4 w-4" /></Button><Button variant="outline" size="sm" onClick={() => startBackup(driveFiltered.filter(f => driveSel.has(f.id)), 'drive')} className="gap-1"><ArchiveRestore className="h-4 w-4" /></Button></>}
+   510→                </div>
+   511→                <ScrollArea className="max-h-[500px]"><div className="space-y-2">
+   512→                  {driveFiltered.slice(0, 80).map(f => (
+   513→                    <Card key={f.id} className={`${f.trashed ? 'opacity-50' : ''} ${driveSel.has(f.id) ? 'ring-2 ring-primary' : ''}`}>
+   514→                      <CardContent className="p-3">
+   515→                        <div className="flex items-center gap-3">
+   516→                          <Checkbox checked={driveSel.has(f.id)} onCheckedChange={() => driveToggle(f.id)} />
+   517→                          <div className="flex h-8 w-8 items-center justify-center rounded bg-slate-100 dark:bg-slate-800 shrink-0">{FILE_ICONS[getftype(f.mimeType)] || <File className="h-4 w-4 text-slate-500" />}</div>
+   518→                          <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{f.name}</p><p className="text-[10px] text-muted-foreground">{fmt(f.size)} &middot; {getftype(f.mimeType)}</p></div>
+   519→                          <div className="flex gap-1"><Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-blue-500" onClick={() => downloadFile('drive', f.id, f.name)}><Download className="h-4 w-4" /></Button></div>
+   520→                        </div>
+   521→                      </CardContent>
+   522→                    </Card>
+   523→                  ))}
+   524→                </div></ScrollArea>
+   525→              </>
+   526→            )}
+   527→          </TabsContent>
+   528→
+   529→          {/* ═══ PHOTOS TAB ═══ */}
+   530→          <TabsContent value="photos" className="mt-6 space-y-6">
+   531→            {!photoStats && !scanningPhotos && <div className="flex flex-col items-center py-12 gap-4"><Camera className="h-10 w-10 text-pink-500" /><h2 className="text-xl font-bold">Scan Photos</h2><Button onClick={scanPhotos} size="lg" className="gap-2"><ScanSearch className="h-5 w-5" />Scan Photos</Button></div>}
+   532→            {scanningPhotos && <LoadingSpinner text="Scanning Photos..." />}
+   533→            {photoStats && !scanningPhotos && (
+   534→              <>
+   535→                <div className="grid gap-3 sm:grid-cols-3">
+   536→                  <Card><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Storage</p><p className="text-xl font-bold">{photoStats.totalSizeFormatted}</p><p className="text-[10px] text-muted-foreground">{photoStats.totalPhotos} photos</p></CardContent></Card>
+   537→                  <Card><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Large</p><p className="text-xl font-bold text-orange-600">{photoStats.largePhotos}</p></CardContent></Card>
+   538→                  <Card><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Favorites</p><p className="text-xl font-bold text-yellow-600">{photoStats.favorites}</p></CardContent></Card>
+   539→                </div>
+   540→                {photoSel.size > 0 && <div className="flex gap-2"><Badge variant="secondary">{photoSel.size}</Badge><Button variant="destructive" size="sm" className="gap-1" onClick={() => openDelete('photos', `Delete ${photoSel.size}`, Array.from(photoSel))}><Trash2 className="h-4 w-4" /></Button><Button variant="outline" size="sm" onClick={() => startBackup(photoItems.filter(p => photoSel.has(p.id)), 'photos')} className="gap-1"><ArchiveRestore className="h-4 w-4" /></Button></div>}
+   541→                <ScrollArea className="max-h-[500px]"><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+   542→                  {photoItems.slice(0, 40).map(p => (
+   543→                    <Card key={p.id} className={`overflow-hidden ${photoSel.has(p.id) ? 'ring-2 ring-primary' : ''}`}>
+   544→                      <div className="relative aspect-square bg-slate-100 dark:bg-slate-800">
+   545→                        {p.baseUrl ? <img src={`${p.baseUrl}=w300`} alt={p.filename} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-10 w-10 text-muted-foreground/30" /></div>}
+   546→                        <div className="absolute top-2 left-2"><Checkbox checked={photoSel.has(p.id)} onCheckedChange={() => photoToggle(p.id)} className="bg-white/80 border-slate-300" /></div>
+   547→                        {p.isFavorite && <div className="absolute top-2 right-2"><Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /></div>}
+   548→                      </div>
+   549→                      <CardContent className="p-3"><p className="text-xs font-medium truncate">{p.filename}</p><div className="flex justify-between mt-1"><span className="text-[10px] text-muted-foreground">{fmt(p.size)}</span><Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-blue-500" onClick={() => downloadFile('photos', p.id, p.filename, p.baseUrl)}><Download className="h-3 w-3" /></Button></div></CardContent>
+   550→                    </Card>
+   551→                  ))}
+   552→                </div></ScrollArea>
+   553→              </>
+   554→            )}
+   555→          </TabsContent>
+   556→
+   557→          {/* ═══ WIZARD TAB ═══ */}
+   558→          <TabsContent value="wizard" className="mt-6 space-y-6">
+   559→            <Card>
+   560→              <CardHeader><CardTitle className="flex items-center gap-2"><Wand2 className="h-5 w-5 text-purple-500" />Smart Cleanup Wizard</CardTitle><CardDescription>Choose how much space you want to free. The wizard will create the safest possible plan.</CardDescription></CardHeader>
+   561→              <CardContent className="space-y-4">
+   562→                <div className="flex items-center gap-4">
+   563→                  <Label className="text-sm font-medium whitespace-nowrap">Free up:</Label>
+   564→                  <div className="flex items-center gap-2">
+   565→                    <Button variant={wizardTarget === 0.5 ? 'default' : 'outline'} size="sm" onClick={() => setWizardTarget(0.5)}>500 MB</Button>
+   566→                    <Button variant={wizardTarget === 1 ? 'default' : 'outline'} size="sm" onClick={() => setWizardTarget(1)}>1 GB</Button>
+   567→                    <Button variant={wizardTarget === 2 ? 'default' : 'outline'} size="sm" onClick={() => setWizardTarget(2)}>2 GB</Button>
+   568→                    <Button variant={wizardTarget === 5 ? 'default' : 'outline'} size="sm" onClick={() => setWizardTarget(5)}>5 GB</Button>
+   569→                    <Input type="number" value={wizardTarget} onChange={e => setWizardTarget(Number(e.target.value) || 1)} className="w-20" />
+   570→                    <span className="text-sm text-muted-foreground">GB</span>
+   571→                  </div>
+   572→                  <Button onClick={runWizard} disabled={wizardLoading} className="gap-2 ml-auto"><Rocket className="h-4 w-4" />{wizardLoading ? 'Planning...' : 'Generate Plan'}</Button>
+   573→                </div>
+   574→                {wizardPlan && (
+   575→                  <div className="space-y-3 mt-4">
+   576→                    <div className="flex items-center gap-4 p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200">
+   577→                      <Target className="h-5 w-5 text-purple-500" />
+   578→                      <div><p className="text-sm font-semibold">Can free up to {wizardPlan.totalCanBeFreedFormatted}</p><p className="text-xs text-muted-foreground">Target: {wizardPlan.targetFormatted} &middot; Estimated time: {wizardPlan.estimatedTime}</p></div>
+   579→                    </div>
+   580→                    <div className="space-y-2">
+   581→                      {wizardPlan.steps.map((step: CleanupStep) => (
+   582→                        <Card key={step.id} className="border-slate-200 dark:border-slate-700">
+   583→                          <CardContent className="p-4">
+   584→                            <div className="flex items-start gap-3">
+   585→                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 shrink-0"><span className="text-xs font-bold">{step.order}</span></div>
+   586→                              <div className="flex-1">
+   587→                                <div className="flex items-center gap-2 flex-wrap">
+   588→                                  <span className="text-sm font-semibold">{step.action}</span>
+   589→                                  <Badge className={`text-[10px] px-1.5 ${RISK_COLORS[step.risk] || ''}`}>{step.risk}</Badge>
+   590→                                  <Badge variant="outline" className="text-[10px]">{step.spaceFreedFormatted}</Badge>
+   591→                                </div>
+   592→                                <p className="text-xs text-muted-foreground mt-1">{step.description}</p>
+   593→                                <p className="text-xs text-muted-foreground mt-1">{step.riskExplanation}</p>
+   594→                              </div>
+   595→                              <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => { setDriveSel(new Set(step.fileIds)); setTab('drive') }}>View</Button>
+   596→                            </div>
+   597→                          </CardContent>
+   598→                        </Card>
+   599→                      ))}
+   600→                    </div>
+   601→                  </div>
+   602→                )}
+   603→              </CardContent>
+   604→            </Card>
+   605→          </TabsContent>
+   606→
+   607→          {/* ═══ TOOLS TAB ═══ */}
+   608→          <TabsContent value="tools" className="mt-6 space-y-6">
+   609→            <div className="grid gap-4 sm:grid-cols-2">
+   610→              {/* Cross-service dedup */}
+   611→              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={runDedup}>
+   612→                <CardContent className="p-4">
+   613→                  <div className="flex items-center gap-3 mb-2"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/30"><Copy className="h-5 w-5 text-violet-500" /></div><div><p className="text-sm font-semibold">Cross-Service Dedup</p><p className="text-xs text-muted-foreground">Find duplicates across Gmail, Drive & Photos</p></div></div>
+   614→                  {dedupLoading && <Progress className="h-1 mt-2" />}
+   615→                  {dedupResults && <p className="text-xs text-muted-foreground mt-2">{dedupResults.length} duplicate groups found</p>}
+   616→                </CardContent>
+   617→              </Card>
+   618→
+   619→              {/* Shared with me */}
+   620→              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={loadShared}>
+   621→                <CardContent className="p-4">
+   622→                  <div className="flex items-center gap-3 mb-2"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/30"><Share2 className="h-5 w-5 text-cyan-500" /></div><div><p className="text-sm font-semibold">Shared With Me</p><p className="text-xs text-muted-foreground">Find stale shared files you never open</p></div></div>
+   623→                  {sharedLoading && <Progress className="h-1 mt-2" />}
+   624→                  {sharedFiles && <p className="text-xs text-muted-foreground mt-2">{sharedFiles.length} stale shared files found</p>}
+   625→                </CardContent>
+   626→              </Card>
+   627→
+   628→              {/* AI Importance */}
+   629→              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => { /* Would score all items */ }}>
+   630→                <CardContent className="p-4">
+   631→                  <div className="flex items-center gap-3 mb-2"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30"><Brain className="h-5 w-5 text-emerald-500" /></div><div><p className="text-sm font-semibold">AI Importance Score</p><p className="text-xs text-muted-foreground">Score emails & files by importance (0-100)</p></div></div>
+   632→                </CardContent>
+   633→              </Card>
+   634→
+   635→              {/* Attachment Sync */}
+   636→              <Card className="cursor-pointer hover:shadow-md transition-shadow">
+   637→                <CardContent className="p-4">
+   638→                  <div className="flex items-center gap-3 mb-2"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30"><FileDown className="h-5 w-5 text-amber-500" /></div><div><p className="text-sm font-semibold">Attachment to Drive</p><p className="text-xs text-muted-foreground">Save Gmail attachments to Drive, then delete from Gmail</p></div></div>
+   639→                </CardContent>
+   640→              </Card>
+   641→
+   642→              {/* Schedules */}
+   643→              <Card className="sm:col-span-2">
+   644→                <CardContent className="p-4">
+   645→                  <div className="flex items-center justify-between mb-3">
+   646→                    <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30"><Timer className="h-5 w-5 text-blue-500" /></div><div><p className="text-sm font-semibold">Scheduled Auto-Cleanup</p><p className="text-xs text-muted-foreground">Set rules to run cleanup automatically</p></div></div>
+   647→                  </div>
+   648→                  <div className="flex gap-2 flex-wrap">
+   649→                    <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={loadSchedules}><RefreshCw className="h-3 w-3" />Load Schedules</Button>
+   650→                  </div>
+   651→                  {schedules.length > 0 && (
+   652→                    <div className="space-y-2 mt-3">
+   653→                      {schedules.map((s: any) => (
+   654→                        <div key={s.id} className="flex items-center gap-3 rounded-lg border p-2">
+   655→                          <div className={`h-2 w-2 rounded-full ${s.enabled ? 'bg-green-500' : 'bg-slate-300'}`} />
+   656→                          <span className="text-sm font-medium flex-1">{s.name}</span>
+   657→                          <Badge variant="outline" className="text-[10px]">{s.frequency}</Badge>
+   658→                          <Badge variant="outline" className="text-[10px]">{s.totalCleaned} cleaned</Badge>
+   659→                        </div>
+   660→                      ))}
+   661→                    </div>
+   662→                  )}
+   663→                  {schedules.length === 0 && !schedulesLoading && <p className="text-xs text-muted-foreground mt-2">No schedules configured yet.</p>}
+   664→                </CardContent>
+   665→              </Card>
+   666→            </div>
+   667→
+   668→            {/* Dedup results */}
+   669→            {dedupResults && dedupResults.length > 0 && (
+   670→              <Card><CardHeader className="pb-3"><CardTitle className="text-sm">Cross-Service Duplicates</CardTitle></CardHeader>
+   671→                <CardContent className="space-y-2">
+   672→                  {dedupResults.slice(0, 10).map((g: any) => (
+   673→                    <div key={g.hashSignature} className="flex items-center gap-3 rounded-lg border p-3">
+   674→                      <Copy className="h-4 w-4 text-violet-500 shrink-0" />
+   675→                      <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{g.fileName}</p><p className="text-xs text-muted-foreground">{g.items.length} copies &middot; {fmt(g.fileSize)} each &middot; Save {fmt(g.spaceRecoverable)}</p></div>
+   676→                      <Badge variant="outline" className="text-[10px] shrink-0">{g.services}</Badge>
+   677→                    </div>
+   678→                  ))}
+   679→                </CardContent></Card>
+   680→            )}
+   681→
+   682→            {/* Shared files results */}
+   683→            {sharedFiles && sharedFiles.length > 0 && (
+   684→              <Card><CardHeader className="pb-3"><CardTitle className="text-sm">Stale Shared Files</CardTitle></CardHeader>
+   685→                <CardContent className="space-y-2">
+   686→                  {sharedFiles.slice(0, 10).map((f: any) => (
+   687→                    <div key={f.id} className="flex items-center gap-3 rounded-lg border p-3">
+   688→                      <Share2 className="h-4 w-4 text-cyan-500 shrink-0" />
+   689→                      <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{f.name}</p><p className="text-xs text-muted-foreground">From {f.ownerEmail} &middot; {fmt(f.size)} &middot; Not modified in {f.lastAccessedDays}d</p></div>
+   690→                    </div>
+   691→                  ))}
+   692→                </CardContent></Card>
+   693→            )}
+   694→          </TabsContent>
+   695→
+   696→          {/* ═══ HISTORY TAB ═══ */}
+   697→          <TabsContent value="history" className="mt-6 space-y-6">
+   698→            <Card><CardHeader><CardTitle className="text-sm flex items-center gap-2"><History className="h-4 w-4" />Cleanup History & Reports</CardTitle></CardHeader>
+   699→              <CardContent>
+   700→                {reports.length > 0 ? (
+   701→                  <div className="space-y-2">
+   702→                    {reports.map((r: any) => (
+   703→                      <div key={r.id} className="flex items-center gap-3 rounded-lg border p-3">
+   704→                        <div className="flex h-8 w-8 items-center justify-center rounded bg-emerald-100 dark:bg-emerald-900/30"><CheckCircle2 className="h-4 w-4 text-emerald-500" /></div>
+   705→                        <div className="flex-1"><p className="text-sm font-medium">{r.title}</p><p className="text-xs text-muted-foreground">{r.summary}</p></div>
+   706→                        <span className="text-xs text-muted-foreground">{new Date(r.createdAt).toLocaleDateString()}</span>
+   707→                      </div>
+   708→                    ))}
+   709→                  </div>
+   710→                ) : <p className="text-sm text-muted-foreground text-center py-8">No cleanup history yet. Start cleaning to see reports here.</p>}
+   711→              </CardContent>
+   712→            </Card>
+   713→          </TabsContent>
+   714→        </Tabs>
+   715→      </main>
+   716→
+   717→      {/* Delete Dialog */}
+   718→      <Dialog open={deleteDialog.open} onOpenChange={open => setDeleteDialog({ ...deleteDialog, open })}>
+   719→        <DialogContent>
+   720→          <DialogHeader><DialogTitle className="flex items-center gap-2"><ShieldAlert className="h-5 w-5 text-red-500" />Confirm Deletion</DialogTitle><DialogDescription>{deleteDialog.title} — cannot be undone.</DialogDescription></DialogHeader>
+   721→          <div className="rounded-lg bg-red-50 dark:bg-red-950/30 p-4"><ul className="text-xs text-red-700 dark:text-red-300 space-y-1 list-disc list-inside"><li>Items permanently removed</li><li>Cannot be undone</li></ul></div>
+   722→          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+   723→            <Button variant="outline" onClick={() => setDeleteDialog({ ...deleteDialog, open: false })} disabled={isDeleting}>Cancel</Button>
+   724→            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting} className="gap-2">{isDeleting ? <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</> : <><Trash2 className="h-4 w-4" />Delete</>}</Button>
+   725→          </DialogFooter>
+   726→        </DialogContent>
+   727→      </Dialog>
+   728→
+   729→      {/* Backup Dialog */}
+   730→      <Dialog open={backupDialog} onOpenChange={setBackupDialog}>
+   731→        <DialogContent>
+   732→          <DialogHeader><DialogTitle className="flex items-center gap-2"><ArchiveRestore className="h-5 w-5 text-blue-500" />Backup Before Delete</DialogTitle><DialogDescription>Download a ZIP backup of {backupItems.length} items before deleting.</DialogDescription></DialogHeader>
+   733→          <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 p-4"><p className="text-xs text-blue-700 dark:text-blue-300">The selected files will be bundled into a ZIP archive and downloaded to your device. After that, you can safely delete them.</p></div>
+   734→          <DialogFooter>
+   735→            <Button variant="outline" onClick={() => setBackupDialog(false)}>Cancel</Button>
+   736→            <Button onClick={executeBackup} disabled={backupLoading} className="gap-2">{backupLoading ? <><Loader2 className="h-4 w-4 animate-spin" />Creating ZIP...</> : <><Download className="h-4 w-4" />Download Backup ZIP</>}</Button>
+   737→          </DialogFooter>
+   738→        </DialogContent>
+   739→      </Dialog>
+   740→    </div>
+   741→  )
+   742→}
+   743→

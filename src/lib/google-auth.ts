@@ -33,6 +33,19 @@ export async function getTokens(code: string) {
   return tokens;
 }
 
+export async function exchangeCodeAndUserInfo(code: string) {
+  const tokens = await getTokens(code);
+  const oauth2Client = getOAuth2Client();
+  oauth2Client.setCredentials(tokens);
+  const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+  const userInfo = await oauth2.userinfo.get();
+  return {
+    tokens,
+    email: userInfo.data.email || '',
+    name: userInfo.data.name || '',
+  };
+}
+
 export function getOAuthClient(accessToken: string, refreshToken?: string | null) {
   const oauth2Client = getOAuth2Client();
   oauth2Client.setCredentials({

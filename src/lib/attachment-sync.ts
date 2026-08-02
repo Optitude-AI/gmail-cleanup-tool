@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 import { getValidTokens, getOAuthClient } from '@/lib/google-auth';
+import { formatBytes } from '@/lib/utils';
 
 interface GmailAttachment {
   messageId: string;
@@ -18,14 +19,6 @@ interface SyncResult {
   totalSizeFormatted: string;
   driveFolderId: string;
   files: { fileName: string; driveFileId: string; size: number }[];
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
 async function downloadAttachment(

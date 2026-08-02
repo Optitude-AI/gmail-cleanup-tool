@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { getUnifiedStorage, type UnifiedStorage } from '@/lib/storage-unified';
+import { formatBytes } from '@/lib/utils';
 
 export interface StorageForecast {
   currentUsage: number;
@@ -9,14 +10,6 @@ export interface StorageForecast {
   weeklyGrowthFormatted: string;
   severity: 'safe' | 'warning' | 'critical';
   recommendation: string;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
 /**

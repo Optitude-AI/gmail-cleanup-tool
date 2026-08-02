@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { scanEmails, refreshAccessToken, type GmailMessage } from '@/lib/gmail';
+import { scanEmails } from '@/lib/gmail';
+import { getValidTokens } from '@/lib/google-auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,34 +11,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Account ID is required' }, { status: 400 });
     }
 
-    const account = await db.gmailAccount.findUnique({ where: { id: accountId } });
-    if (!account) {
-      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
-    }
-
-    let accessToken = account.accessToken;
-    let refreshToken = account.refreshToken;
-
-    // Check if token needs refresh
-    if (account.tokenExpiry && new Date(account.tokenExpiry) < new Date()) {
-      if (refreshToken) {
-        const credentials = await refreshAccessToken(refreshToken);
-        accessToken = credentials.access_token || accessToken;
-        if (credentials.refresh_token) refreshToken = credentials.refresh_token;
-        if (credentials.expiry_date) {
-          await db.gmailAccount.update({
-            where: { id: accountId },
-            data: {
-              accessToken,
-              refreshToken,
-              tokenExpiry: new Date(credentials.expiry_date),
-            },
-          });
-        }
-      } else {
-        return NextResponse.json({ error: 'Token expired and no refresh token available. Please reconnect.' }, { status: 401 });
-      }
-    }
+    const { accessToken, refreshToken } = await getValidTokens(accountId);
 
     // Scan emails
     const messages = await scanEmails(accessToken, refreshToken);
