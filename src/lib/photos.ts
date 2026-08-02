@@ -76,7 +76,7 @@ export async function scanPhotos(accountId: string, maxResults: number = 500): P
 
       if (res.data.files) {
         for (const f of res.data.files) {
-          const imgMeta = (f as any).imageMediaMetadata || {};
+          const imgMeta = (f as { imageMediaMetadata?: { width?: number; height?: number } }).imageMediaMetadata || {};
           photos.push({
             id: f.id!,
             filename: f.name || 'photo',

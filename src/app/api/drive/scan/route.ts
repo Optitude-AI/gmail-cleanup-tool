@@ -1,15 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { scanDriveFiles } from '@/lib/drive';
+import { validateBody, driveScanSchema } from '@/lib/validations';
+import { ok, err, validationErr } from '@/lib/api-response';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId } = await request.json();
-    if (!accountId) return NextResponse.json({ error: 'Account ID required' }, { status: 400 });
+    const body = await request.json();
+    const { data, error } = validateBody(driveScanSchema, body);
+    if (error) {
+      return validationErr(error.message);
+    }
+    const { accountId } = data;
 
     const { files, stats } = await scanDriveFiles(accountId);
-
-    return NextResponse.json({ success: true, stats, files });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Drive scan failed', details: error.message }, { status: 500 });
+    return ok({ stats, files });
+  } catch (error: unknown) {
+    console.error('Drive scan error:', error);
+    return err('Operation failed. Please try again.');
   }
 }

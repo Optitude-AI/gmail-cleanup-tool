@@ -1,14 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { findCrossServiceDuplicates } from '@/lib/cross-dedup';
+import { validateBody, dedupSchema } from '@/lib/validations';
+import { ok, err, validationErr } from '@/lib/api-response';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId } = await request.json();
-    if (!accountId) return NextResponse.json({ error: 'Account ID required' }, { status: 400 });
+    const body = await request.json();
+    const { data, error } = validateBody(dedupSchema, body);
+    if (error) {
+      return validationErr(error.message);
+    }
+    const { accountId } = data;
     const duplicates = await findCrossServiceDuplicates(accountId);
     const totalRecoverable = duplicates.reduce((s, g) => s + g.spaceRecoverable, 0);
-    return NextResponse.json({ success: true, duplicates, totalRecoverable });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Dedup scan failed', details: error.message }, { status: 500 });
+    return ok({ duplicates, totalRecoverable });
+  } catch (error: unknown) {
+    console.error('Dedup scan error:', error);
+    return err('Operation failed. Please try again.');
   }
 }

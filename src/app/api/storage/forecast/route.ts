@@ -1,13 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getStorageForecast } from '@/lib/storage-forecast';
+import { validateBody, storageForecastSchema } from '@/lib/validations';
+import { ok, err, validationErr } from '@/lib/api-response';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId } = await request.json();
-    if (!accountId) return NextResponse.json({ error: 'Account ID required' }, { status: 400 });
+    const body = await request.json();
+    const { data, error } = validateBody(storageForecastSchema, body);
+    if (error) {
+      return validationErr(error.message);
+    }
+    const { accountId } = data;
     const forecast = await getStorageForecast(accountId);
-    return NextResponse.json({ success: true, forecast });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Forecast failed', details: error.message }, { status: 500 });
+    return ok({ forecast });
+  } catch (error: unknown) {
+    console.error('Forecast error:', error);
+    return err('Operation failed. Please try again.');
   }
 }

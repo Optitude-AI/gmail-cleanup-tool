@@ -1,24 +1,36 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { generateReport, getReports } from '@/lib/cleanup-reports';
+import { reportGetSchema, reportCreateSchema } from '@/lib/validations';
+import { ok, err, validationErr } from '@/lib/api-response';
 
 export async function GET(request: NextRequest) {
   try {
-    const accountId = request.nextUrl.searchParams.get('accountId');
-    if (!accountId) return NextResponse.json({ error: 'Account ID required' }, { status: 400 });
-    const reports = await getReports(accountId);
-    return NextResponse.json({ success: true, reports });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Failed to get reports', details: error.message }, { status: 500 });
+    const url = new URL(request.url);
+    const accountId = url.searchParams.get('accountId');
+    const { data, error } = validateBody(reportGetSchema, { accountId });
+    if (error) {
+      return validationErr(error.message);
+    }
+    const reports = await getReports(data!.accountId);
+    return ok({ reports });
+  } catch (error: unknown) {
+    console.error('Reports GET error:', error);
+    return err('Operation failed. Please try again.');
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId, data } = await request.json();
-    if (!accountId) return NextResponse.json({ error: 'Account ID required' }, { status: 400 });
-    const report = await generateReport(accountId, data);
-    return NextResponse.json({ success: true, report });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Failed to generate report', details: error.message }, { status: 500 });
+    const body = await request.json();
+    const { data, error } = validateBody(reportCreateSchema, body);
+    if (error) {
+      return validationErr(error.message);
+    }
+    const { accountId, data: reportData } = data;
+    const report = await generateReport(accountId, reportData);
+    return ok({ report });
+  } catch (error: unknown) {
+    console.error('Reports POST error:', error);
+    return err('Operation failed. Please try again.');
   }
 }

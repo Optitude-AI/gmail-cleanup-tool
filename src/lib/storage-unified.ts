@@ -59,7 +59,7 @@ async function getGmailStorage(
       maxResults: 1,
     });
     // resultMessagesEstimate is only available in some responses
-    emailCount = (allRes.data as any).resultSizeEstimate || messages.length;
+    emailCount = (allRes.data as { resultSizeEstimate?: number }).resultSizeEstimate || messages.length;
 
     // If there are attachment emails, try to get a more accurate total count
     if (attachmentCount === 500) {
@@ -71,7 +71,7 @@ async function getGmailStorage(
           q: 'has:attachment larger:1m',
           maxResults: 1,
         });
-        attachmentCount = (countRes.data as any).resultSizeEstimate || attachmentCount;
+        attachmentCount = (countRes.data as { resultSizeEstimate?: number }).resultSizeEstimate || attachmentCount;
       } catch {
         // keep the 500 count
       }
@@ -107,7 +107,7 @@ async function getDriveQuota(
     const about = await drive.about.get({
       fields: 'storageQuota, user',
     });
-    const quota = (about.data as any).storageQuota || {};
+    const quota = (about.data as { storageQuota?: Record<string, string> }).storageQuota || {};
     return {
       limit: parseInt(quota.limit || String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT,
       usage: parseInt(quota.usage || '0', 10) || 0,
@@ -141,7 +141,7 @@ async function getDriveStorage(
       supportsAllDrives: true,
       q: 'trashed = false',
     });
-    fileCount = (listRes.data as any).resultSizeEstimate || listRes.data.files?.length ?? 0;
+    fileCount = (listRes.data as { resultSizeEstimate?: number }).resultSizeEstimate || listRes.data.files?.length ?? 0;
   } catch {
     // keep default fileCount of 0
   }

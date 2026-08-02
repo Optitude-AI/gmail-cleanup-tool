@@ -128,6 +128,11 @@ export interface WizardCleanupStep {
   spaceFreedFormatted: string
   itemCount: number
   fileIds?: string[]
+  order?: number
+  risk?: 'safe' | 'low' | 'medium' | 'high'
+  riskExplanation?: string
+  filesAffected?: number
+  estimatedTime?: string
 }
 
 export interface WizardPlan {
@@ -136,6 +141,7 @@ export interface WizardPlan {
   totalCanBeFreedFormatted: string
   targetFormatted: string
   confidence: number
+  estimatedTime?: string
 }
 
 // ── Dedup Types ──
@@ -145,6 +151,7 @@ export interface DedupResult {
   fileSize: number
   services: string[]
   items: Array<{ service: string; id: string; name: string }>
+  spaceRecoverable?: number
 }
 
 // ── Schedule Types ──
@@ -199,8 +206,10 @@ export interface SharedFile {
   size: number
   sizeFormatted: string
   owner: string
+  ownerEmail?: string
   lastViewedByMeTime: string | null
   webViewLink: string
+  lastAccessedDays?: number
 }
 
 // ── Tab / UI Constants ──

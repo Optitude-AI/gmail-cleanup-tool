@@ -1,15 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { deleteEmails } from '@/lib/gmail';
 import { getValidTokens } from '@/lib/google-auth';
+import { validateBody, gmailDeleteSchema } from '@/lib/validations';
+import { ok, err, validationErr } from '@/lib/api-response';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId, scanResultIds, allInCategory, category } = await request.json();
-
-    if (!accountId) {
-      return NextResponse.json({ error: 'Account ID is required' }, { status: 400 });
+    const body = await request.json();
+    const { data, error } = validateBody(gmailDeleteSchema, body);
+    if (error) {
+      return validationErr(error.message);
     }
+    const { accountId, scanResultIds, allInCategory, category } = data;
 
     const { accessToken, refreshToken } = await getValidTokens(accountId);
 
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (allMessageIds.length === 0) {
-      return NextResponse.json({ success: true, deleted: 0, message: 'No emails to delete' });
+      return ok({ deleted: 0, message: 'No emails to delete' });
     }
 
     // Delete in batches
@@ -65,17 +68,13 @@ export async function POST(request: NextRequest) {
       where: { id: { in: deletedIds } },
     });
 
-    return NextResponse.json({
-      success: true,
+    return ok({
       deleted: totalDeleted,
       failed: totalFailed,
       message: `Deleted ${totalDeleted} email${totalDeleted !== 1 ? 's' : ''}${totalFailed > 0 ? `. ${totalFailed} failed.` : ''}`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Delete error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete emails', details: error.message },
-      { status: 500 }
-    );
+    return err('Operation failed. Please try again.');
   }
 }

@@ -158,3 +158,79 @@ src/
         ├── DeleteConfirmDialog.tsx
         └── BackupDialog.tsx
 ```
+
+---
+
+## Phase 3: Dependency & Component Cleanup
+
+### Removed 45 npm dependencies
+
+Reduced `package.json` dependencies from 70 to 25 by removing all unused packages.
+
+**Removed non-Radix packages (26):**
+@dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities, @hookform/resolvers, @mdxeditor/editor, @reactuses/core, @tanstack/react-query, @tanstack/react-table, cmdk, embla-carousel-react, framer-motion, input-otp, next-auth, next-intl, next-themes, react-day-picker, react-hook-form, react-markdown, react-resizable-panels, react-syntax-highlighter, recharts, sharp, sonner, vaul, z-ai-web-dev-sdk, zustand, date-fns-tz
+
+**Removed @radix-ui packages (19):**
+@radix-ui/react-accordion, @radix-ui/react-alert-dialog, @radix-ui/react-aspect-ratio, @radix-ui/react-avatar, @radix-ui/react-collapsible, @radix-ui/react-context-menu, @radix-ui/react-dropdown-menu, @radix-ui/react-hover-card, @radix-ui/react-menubar, @radix-ui/react-navigation-menu, @radix-ui/react-popover, @radix-ui/react-radio-group, @radix-ui/react-select, @radix-ui/react-slider, @radix-ui/react-switch, @radix-ui/react-toggle, @radix-ui/react-toggle-group, @radix-ui/react-tooltip
+
+**Remaining dependencies (25):**
+@prisma/client, @radix-ui/react-checkbox, @radix-ui/react-dialog, @radix-ui/react-label, @radix-ui/react-progress, @radix-ui/react-scroll-area, @radix-ui/react-separator, @radix-ui/react-slot, @radix-ui/react-tabs, @radix-ui/react-toast, archiver, class-variance-authority, clsx, date-fns, google-auth-library, googleapis, lucide-react, next, prisma, react, react-dom, tailwind-merge, tailwindcss-animate, uuid, zod
+
+### Deleted 34 unused shadcn/ui component files
+
+Kept 14 files in `src/components/ui/` that are actually imported:
+- **Directly used by app:** alert.tsx, badge.tsx, button.tsx, card.tsx, checkbox.tsx, dialog.tsx, input.tsx, label.tsx, progress.tsx, scroll-area.tsx, separator.tsx, tabs.tsx
+- **Indirectly needed (toast system):** toast.tsx, toaster.tsx
+
+Deleted 34 files:
+accordion.tsx, alert-dialog.tsx, aspect-ratio.tsx, avatar.tsx, breadcrumb.tsx, calendar.tsx, carousel.tsx, chart.tsx, collapsible.tsx, command.tsx, context-menu.tsx, drawer.tsx, dropdown-menu.tsx, form.tsx, hover-card.tsx, input-otp.tsx, menubar.tsx, navigation-menu.tsx, pagination.tsx, popover.tsx, radio-group.tsx, resizable.tsx, select.tsx, sheet.tsx, sidebar.tsx, skeleton.tsx, slider.tsx, sonner.tsx, switch.tsx, table.tsx, textarea.tsx, toggle-group.tsx, toggle.tsx, tooltip.tsx
+
+### Verification
+- `bun run lint` — 0 errors
+- Dev server compiled successfully, `GET /` returned 200 OK
+
+---
+
+## Phase 4: Eliminate All `any` Types
+
+### Summary
+
+Removed every `any` type annotation from the codebase, replacing them with proper TypeScript types. This covered 9 files with 60+ `any` occurrences across component props, function parameters, API error handling, and library interfaces.
+
+### Changes by File
+
+| File | `any` Removed | What Changed |
+|------|---------------|-------------|
+| `src/lib/types.ts` | 0 (added fields) | Added `order`, `risk`, `riskExplanation`, `filesAffected`, `estimatedTime` to `WizardCleanupStep`; added `estimatedTime` to `WizardPlan`; added `spaceRecoverable?: number` to `DedupResult`; added `ownerEmail?: string` and `lastAccessedDays?: number` to `SharedFile` |
+| `src/lib/smart-wizard.ts` | 17 | Created local `GmailMessageSummary` interface; typed `gmailResults` and `photoItems` params; removed `(e: any)` and `(p: any)` annotations (now inferred); changed `p.size` → `p.sizeBytes` for numeric comparisons |
+| `src/components/app/ToolsTab.tsx` | 5 | Imported `DedupResult`, `SharedFile`, `CleanupSchedule` from types; typed `dedupResults`, `sharedFiles`, `schedules` props; removed `(s: any)`, `(g: any)`, `(f: any)` annotations; changed `g.services` → `g.services.join(', ')` |
+| `src/components/app/HistoryTab.tsx` | 2 | Imported `CleanupReport`; typed `reports` prop; removed `(r: any)` annotation |
+| `src/components/app/WizardTab.tsx` | 1 | Imported `WizardPlan`; typed `wizardPlan` prop |
+| `src/app/page.tsx` | 3 | Typed `backupItems` state as `Array<{ fileId: string; fileName: string; service: string }>`; typed `startBackup` params with explicit inline type |
+| `src/app/api/ai-score/route.ts` | 6 | Created `ScoreableItem` and `ScoredItem` interfaces; replaced `(item as any)`, `(a: any, b: any)`, `(a as any)` casts |
+| `src/lib/gmail.ts` | 2 | Created `GmailPayload` and `GmailMimePart` interfaces; typed `extractUnsubscribeLinks(payload)` and `traverseParts(parts)` |
+| `src/lib/drive.ts` | 1 | Typed `response` as `{ data: unknown }` instead of `any` |
+| `src/app/api/schedules/route.ts` | 5 | Replaced `params as any` with proper inline type casts `{ name?: string; frequency?: string; rules?: string[]; scheduleId?: string; enabled?: boolean }` |
+| `src/lib/photos.ts` | 1 | Replaced `(f as any).imageMediaMetadata` with `(f as { imageMediaMetadata?: { width?: number; height?: number } }).imageMediaMetadata` |
+| `src/lib/storage-unified.ts` | 4 | Replaced `(data as any).resultSizeEstimate` and `(data as any).storageQuota` with proper typed casts |
+| `src/app/api/attachment-sync/sync/route.ts` | 1 | `catch (error: any)` → `catch (error: unknown)` with type narrowing, removed `details: error.message` |
+| `src/app/api/attachment-sync/find/route.ts` | 1 | Same pattern as above |
+| `src/app/api/shared/find/route.ts` | 1 | Same pattern |
+| **26 API route files** | 26+ | All `catch (error: any)` → `catch (error: unknown)`; all `details: error.message` removed (info leak fix) |
+
+### Security Fix: API Error Message Leakage
+
+All 26 API routes were leaking internal error details via `details: error.message` in 500 responses. Changed to:
+```typescript
+} catch (error: unknown) {
+  const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+  console.error('Route error:', error);
+  return NextResponse.json({ error: 'Generic message' }, { status: 500 });
+}
+```
+Server-side logging preserved via `console.error`; client only sees generic messages.
+
+### Verification
+- `bun run lint` — 0 errors, 0 warnings
+- `rg ':\s*any\b|as\s+any\b|<any>' src/` — 0 matches (only `any` in comments/strings)
+

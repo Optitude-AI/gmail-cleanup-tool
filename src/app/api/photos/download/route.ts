@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { downloadPhoto } from '@/lib/photos';
+import { validateBody, photosDownloadSchema } from '@/lib/validations';
+import { err, validationErr } from '@/lib/api-response';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId, photoId, baseUrl } = await request.json();
-    if (!accountId || !photoId) {
-      return NextResponse.json({ error: 'Account ID and Photo ID required' }, { status: 400 });
+    const body = await request.json();
+    const { data, error } = validateBody(photosDownloadSchema, body);
+    if (error) {
+      return validationErr(error.message);
     }
+    const { accountId, photoId, baseUrl } = data;
 
     const { buffer, fileName, mimeType } = await downloadPhoto(accountId, photoId, baseUrl);
 
@@ -17,7 +21,8 @@ export async function POST(request: NextRequest) {
         'Content-Length': buffer.length.toString(),
       },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Photo download failed', details: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Photo download error:', error);
+    return err('Operation failed. Please try again.');
   }
 }

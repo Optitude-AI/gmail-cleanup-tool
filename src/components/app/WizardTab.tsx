@@ -7,11 +7,11 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RISK_COLORS } from '@/components/app/constants'
-import type { CleanupStep } from '@/lib/types'
+import type { CleanupStep, WizardPlan } from '@/lib/types'
 
 interface WizardTabProps {
   wizardTarget: number
-  wizardPlan: any | null
+  wizardPlan: WizardPlan | null
   wizardLoading: boolean
   onTargetChange: (v: number) => void
   onGenerate: () => void

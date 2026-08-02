@@ -93,7 +93,7 @@ export default function GoogleCleanupPage() {
 
   // Backup
   const [backupDialog, setBackupDialog] = useState(false)
-  const [backupItems, setBackupItems] = useState<any[]>([])
+  const [backupItems, setBackupItems] = useState<Array<{ fileId: string; fileName: string; service: string }>>([])
   const [backupLoading, setBackupLoading] = useState(false)
 
   // ── Auth ──
@@ -171,8 +171,8 @@ export default function GoogleCleanupPage() {
   }
 
   // ── Backup ZIP ──
-  const startBackup = (items: any[], service: string) => {
-    setBackupItems(items.map((i: any) => ({ fileId: i.id || i.fileId, fileName: i.name || i.fileName, service })))
+  const startBackup = (items: Array<{ id?: string; fileId?: string; name?: string; fileName?: string }>, service: string) => {
+    setBackupItems(items.map((i) => ({ fileId: i.id || i.fileId, fileName: i.name || i.fileName, service })))
     setBackupDialog(true)
   }
   const executeBackup = async () => {

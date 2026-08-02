@@ -2,9 +2,10 @@
 
 import { History, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { CleanupReport } from '@/lib/types'
 
 interface HistoryTabProps {
-  reports: any[]
+  reports: CleanupReport[]
 }
 
 export function HistoryTab({ reports }: HistoryTabProps) {
@@ -16,7 +17,7 @@ export function HistoryTab({ reports }: HistoryTabProps) {
       <CardContent>
         {reports.length > 0 ? (
           <div className="space-y-2">
-            {reports.map((r: any) => (
+            {reports.map((r) => (
               <div key={r.id} className="flex items-center gap-3 rounded-lg border p-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded bg-emerald-100 dark:bg-emerald-900/30"><CheckCircle2 className="h-4 w-4 text-emerald-500" /></div>
                 <div className="flex-1"><p className="text-sm font-medium">{r.title}</p><p className="text-xs text-muted-foreground">{r.summary}</p></div>

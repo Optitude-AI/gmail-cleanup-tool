@@ -1,15 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { scanEmails } from '@/lib/gmail';
 import { getValidTokens } from '@/lib/google-auth';
+import { validateBody, gmailScanSchema } from '@/lib/validations';
+import { ok, err, validationErr } from '@/lib/api-response';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId } = await request.json();
-
-    if (!accountId) {
-      return NextResponse.json({ error: 'Account ID is required' }, { status: 400 });
+    const body = await request.json();
+    const { data, error } = validateBody(gmailScanSchema, body);
+    if (error) {
+      return validationErr(error.message);
     }
+    const { accountId } = data;
 
     const { accessToken, refreshToken } = await getValidTokens(accountId);
 
@@ -109,16 +112,9 @@ export async function POST(request: NextRequest) {
       withUnsubscribe: scanResults.filter(r => r.unsubscribeUrl).length,
     };
 
-    return NextResponse.json({
-      success: true,
-      stats,
-      results: scanResults,
-    });
-  } catch (error: any) {
+    return ok({ stats, results: scanResults });
+  } catch (error: unknown) {
     console.error('Scan error:', error);
-    return NextResponse.json(
-      { error: 'Failed to scan emails', details: error.message },
-      { status: 500 }
-    );
+    return err('Operation failed. Please try again.');
   }
 }

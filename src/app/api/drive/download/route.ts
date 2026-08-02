@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { downloadDriveFile } from '@/lib/drive';
+import { validateBody, driveDownloadSchema } from '@/lib/validations';
+import { err, validationErr } from '@/lib/api-response';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId, fileId } = await request.json();
-    if (!accountId || !fileId) {
-      return NextResponse.json({ error: 'Account ID and File ID required' }, { status: 400 });
+    const body = await request.json();
+    const { data, error } = validateBody(driveDownloadSchema, body);
+    if (error) {
+      return validationErr(error.message);
     }
+    const { accountId, fileId } = data;
 
     const { buffer, fileName, mimeType } = await downloadDriveFile(accountId, fileId);
 
@@ -17,7 +21,8 @@ export async function POST(request: NextRequest) {
         'Content-Length': buffer.length.toString(),
       },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Download failed', details: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Download error:', error);
+    return err('Operation failed. Please try again.');
   }
 }

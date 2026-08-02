@@ -290,7 +290,7 @@ export async function downloadDriveFile(accountId: string, fileId: string): Prom
     if (extMap[exportMime]) fileName += extMap[exportMime];
   }
 
-  let response: any;
+  let response: { data: unknown };
 
   if (exportMime) {
     response = await drive.files.export({ fileId, mimeType: exportMime, responseType: 'arraybuffer' });

@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createBackupArchive } from '@/lib/backup';
+import { validateBody, backupCreateSchema } from '@/lib/validations';
+import { err, validationErr } from '@/lib/api-response';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accountId, items } = await request.json();
-    if (!accountId || !items?.length) return NextResponse.json({ error: 'Account ID and items required' }, { status: 400 });
+    const body = await request.json();
+    const { data, error } = validateBody(backupCreateSchema, body);
+    if (error) {
+      return validationErr(error.message);
+    }
+    const { accountId, items } = data;
     const buffer = await createBackupArchive(accountId, items);
     return new NextResponse(buffer, {
       headers: { 'Content-Type': 'application/zip', 'Content-Disposition': 'attachment; filename="backup.zip"', 'Content-Length': buffer.length.toString() },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Backup failed', details: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Backup error:', error);
+    return err('Operation failed. Please try again.');
   }
 }

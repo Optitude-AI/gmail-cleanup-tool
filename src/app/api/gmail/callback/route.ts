@@ -1,14 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { exchangeCodeAndUserInfo } from '@/lib/google-auth';
 import { db } from '@/lib/db';
+import { validateBody, gmailCallbackSchema } from '@/lib/validations';
+import { ok, err, validationErr } from '@/lib/api-response';
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, userId } = await request.json();
-
-    if (!code) {
-      return NextResponse.json({ error: 'Authorization code is required' }, { status: 400 });
+    const body = await request.json();
+    const { data, error } = validateBody(gmailCallbackSchema, body);
+    if (error) {
+      return validationErr(error.message);
     }
+    const { code, userId } = data;
 
     const { tokens, email, name } = await exchangeCodeAndUserInfo(code);
 
@@ -31,17 +34,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      email: account.email,
-      name,
-      accountId: account.id,
-    });
-  } catch (error: any) {
+    return ok({ email: account.email, name, accountId: account.id });
+  } catch (error: unknown) {
     console.error('Gmail callback error:', error);
-    return NextResponse.json(
-      { error: 'Failed to exchange code for tokens', details: error.message },
-      { status: 500 }
-    );
+    return err('Operation failed. Please try again.');
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { ok, err } from '@/lib/api-response';
 
 export async function GET() {
   try {
@@ -14,10 +15,8 @@ export async function GET() {
     });
 
     return NextResponse.json({ accounts });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: 'Failed to get accounts', details: error.message },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    console.error('Status error:', error);
+    return err('Operation failed. Please try again.');
   }
 }

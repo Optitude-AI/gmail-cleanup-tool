@@ -6,14 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { formatBytes } from '@/lib/utils'
+import type { DedupResult, SharedFile, CleanupSchedule } from '@/lib/types'
 
 interface ToolsTabProps {
   dedupLoading: boolean
-  dedupResults: any[] | null
+  dedupResults: DedupResult[] | null
   sharedLoading: boolean
-  sharedFiles: any[] | null
+  sharedFiles: SharedFile[] | null
   schedulesLoading: boolean
-  schedules: any[]
+  schedules: CleanupSchedule[]
   onRunDedup: () => void
   onLoadShared: () => void
   onLoadSchedules: () => void
@@ -81,7 +82,7 @@ export function ToolsTab({ dedupLoading, dedupResults, sharedLoading, sharedFile
             </div>
             {schedules.length > 0 && (
               <div className="space-y-2 mt-3">
-                {schedules.map((s: any) => (
+                {schedules.map((s) => (
                   <div key={s.id} className="flex items-center gap-3 rounded-lg border p-2">
                     <div className={`h-2 w-2 rounded-full ${s.enabled ? 'bg-green-500' : 'bg-slate-300'}`} />
                     <span className="text-sm font-medium flex-1">{s.name}</span>
@@ -100,11 +101,11 @@ export function ToolsTab({ dedupLoading, dedupResults, sharedLoading, sharedFile
       {dedupResults && dedupResults.length > 0 && (
         <Card><CardHeader className="pb-3"><CardTitle className="text-sm">Cross-Service Duplicates</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {dedupResults.slice(0, 10).map((g: any) => (
+            {dedupResults.slice(0, 10).map((g) => (
               <div key={g.hashSignature} className="flex items-center gap-3 rounded-lg border p-3">
                 <Copy className="h-4 w-4 text-violet-500 shrink-0" />
                 <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{g.fileName}</p><p className="text-xs text-muted-foreground">{g.items.length} copies &middot; {formatBytes(g.fileSize)} each &middot; Save {formatBytes(g.spaceRecoverable)}</p></div>
-                <Badge variant="outline" className="text-[10px] shrink-0">{g.services}</Badge>
+                <Badge variant="outline" className="text-[10px] shrink-0">{g.services.join(', ')}</Badge>
               </div>
             ))}
           </CardContent></Card>
@@ -114,7 +115,7 @@ export function ToolsTab({ dedupLoading, dedupResults, sharedLoading, sharedFile
       {sharedFiles && sharedFiles.length > 0 && (
         <Card><CardHeader className="pb-3"><CardTitle className="text-sm">Stale Shared Files</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {sharedFiles.slice(0, 10).map((f: any) => (
+            {sharedFiles.slice(0, 10).map((f) => (
               <div key={f.id} className="flex items-center gap-3 rounded-lg border p-3">
                 <Share2 className="h-4 w-4 text-cyan-500 shrink-0" />
                 <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{f.name}</p><p className="text-xs text-muted-foreground">From {f.ownerEmail} &middot; {formatBytes(f.size)} &middot; Not modified in {f.lastAccessedDays}d</p></div>

@@ -1,5 +1,12 @@
 import { type DriveFile, type DriveStats } from '@/lib/drive';
+import type { PhotoItem } from '@/lib/types';
 import { formatBytes } from '@/lib/utils';
+
+interface GmailMessageSummary {
+  id: string;
+  labelIds?: string[];
+  category: string;
+}
 
 interface CleanupPlan {
   targetToFree: number;
@@ -43,8 +50,8 @@ interface CleanupStep {
 export function generateCleanupPlan(
   targetBytes: number,
   driveFiles: DriveFile[],
-  gmailResults: any[],
-  photoItems: any[],
+  gmailResults: GmailMessageSummary[],
+  photoItems: PhotoItem[],
   driveStats: DriveStats,
 ): CleanupPlan {
   const candidateSteps: CleanupStep[] = [];
@@ -142,7 +149,7 @@ export function generateCleanupPlan(
 
   // --- 5. Remove promotional emails (risk: safe) ---
   const promoEmails = gmailResults.filter(
-    (e: any) =>
+    (e) =>
       e.labelIds?.includes('CATEGORY_PROMOTIONS') ||
       (e.category === 'promotion' || e.category === 'subscription'),
   );
@@ -161,13 +168,13 @@ export function generateCleanupPlan(
       risk: 'safe',
       riskExplanation:
         'These are marketing, newsletter, and promotional emails. Personal and important emails are not affected.',
-      fileIds: promoEmails.map((e: any) => e.id),
+      fileIds: promoEmails.map((e) => e.id),
     });
   }
 
   // --- 6. Remove junk emails (risk: safe) ---
   const junkEmails = gmailResults.filter(
-    (e: any) =>
+    (e) =>
       e.labelIds?.includes('SPAM') ||
       e.labelIds?.includes('JUNK') ||
       e.category === 'junk',
@@ -186,26 +193,26 @@ export function generateCleanupPlan(
       risk: 'safe',
       riskExplanation:
         'These are spam and junk emails already flagged by Gmail. Deleting them permanently clears them from your account.',
-      fileIds: junkEmails.map((e: any) => e.id),
+      fileIds: junkEmails.map((e) => e.id),
     });
   }
 
   // --- 7. Remove old screenshots (risk: low) ---
-  const screenshots = photoItems.filter((p: any) => {
+  const screenshots = photoItems.filter((p) => {
     const ratio = p.width / p.height;
     const isScreenRatio =
       Math.abs(ratio - 16 / 9) < 0.1 || Math.abs(ratio - 16 / 10) < 0.1;
-    const isSmall = p.size < 5 * 1024 * 1024;
+    const isSmall = p.sizeBytes < 5 * 1024 * 1024;
     return isScreenRatio && isSmall;
   });
   // Only consider screenshots older than 6 months
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
   const oldScreenshots = screenshots.filter(
-    (p: any) => p.creationTime && new Date(p.creationTime) < sixMonthsAgo,
+    (p) => p.creationTime && new Date(p.creationTime) < sixMonthsAgo,
   );
   if (oldScreenshots.length > 0) {
-    const ssSize = oldScreenshots.reduce((s: number, p: any) => s + p.size, 0);
+    const ssSize = oldScreenshots.reduce((s: number, p) => s + p.sizeBytes, 0);
     candidateSteps.push({
       id: 'remove-old-screenshots',
       order: order++,
@@ -218,15 +225,15 @@ export function generateCleanupPlan(
       risk: 'low',
       riskExplanation:
         'Screenshots older than 6 months are usually temporary captures that are no longer needed. Important photos are not affected.',
-      fileIds: oldScreenshots.map((p: any) => p.id),
+      fileIds: oldScreenshots.map((p) => p.id),
     });
   }
 
   // --- 8. Remove large unoptimized photos (risk: medium) ---
   const LARGE_PHOTO_THRESHOLD = 10 * 1024 * 1024;
-  const largePhotos = photoItems.filter((p: any) => p.size > LARGE_PHOTO_THRESHOLD);
+  const largePhotos = photoItems.filter((p) => p.sizeBytes > LARGE_PHOTO_THRESHOLD);
   if (largePhotos.length > 0) {
-    const photoSize = largePhotos.reduce((s: number, p: any) => s + p.size, 0);
+    const photoSize = largePhotos.reduce((s: number, p) => s + p.sizeBytes, 0);
     candidateSteps.push({
       id: 'remove-large-photos',
       order: order++,
@@ -239,7 +246,7 @@ export function generateCleanupPlan(
       risk: 'medium',
       riskExplanation:
         'These are high-resolution photos that take up significant space. Consider downloading them locally or compressing them before deleting.',
-      fileIds: largePhotos.map((p: any) => p.id),
+      fileIds: largePhotos.map((p) => p.id),
     });
   }
 

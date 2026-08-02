@@ -42,7 +42,18 @@ const JUNK_KEYWORDS = [
   'lottery', 'cash bonus', 'make money', 'crypto', 'bitcoin', 'earn money',
 ];
 
-function extractUnsubscribeLinks(payload: any): string[] {
+interface GmailPayload {
+  headers?: Array<{ name: string; value: string }>;
+  parts?: GmailMimePart[];
+}
+
+interface GmailMimePart {
+  mimeType?: string;
+  body?: { data?: string };
+  parts?: GmailMimePart[];
+}
+
+function extractUnsubscribeLinks(payload: GmailPayload): string[] {
   const links: string[] = [];
 
   // Check List-Unsubscribe header
@@ -66,7 +77,7 @@ function extractUnsubscribeLinks(payload: any): string[] {
 
   // Also search in body for unsubscribe links
   const bodyParts: string[] = [];
-  function traverseParts(parts: any[]) {
+  function traverseParts(parts: GmailMimePart[]) {
     if (!parts) return;
     for (const part of parts) {
       if (part.mimeType === 'text/html' && part.body?.data) {
