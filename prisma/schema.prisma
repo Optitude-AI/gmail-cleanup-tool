@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GmailAccount {
+  id            String       @id @default(cuid())
+  userId        String       @unique
+  email         String
+  accessToken   String
+  refreshToken  String?
+  tokenExpiry   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  scanResults  ScanResult[]
+}
+
+model ScanResult {
+  id            String          @id @default(cuid())
+  accountId     String
+  category      String
+  senderEmail   String
+  senderName    String?
+  subject       String?
+  threadId      String
+  messageIds    String
+  emailCount    Int             @default(1)
+  lastReceived  DateTime?
+  unsubscribeUrl String?
+  scannedAt     DateTime        @default(now())
+
+  account       GmailAccount    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  cleanupActions CleanupAction[]
+
+  @@index([accountId])
+  @@index([category])
+}
+
+model CleanupAction {
+  id            String      @id @default(cuid())
+  scanResultId  String
+  action        String
+  messageIds    String
+  performedAt   DateTime    @default(now())
+
+  scanResult    ScanResult  @relation(fields: [scanResultId], references: [id], onDelete: Cascade)
+
+  @@index([scanResultId])
+}
