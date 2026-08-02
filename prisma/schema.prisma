@@ -35,7 +35,9 @@ model GmailAccount {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  scanResults  ScanResult[]
+  scanResults      ScanResult[]
+  driveScanResults DriveScanResult[]
+  photoScanResults PhotoScanResult[]
 }
 
 model ScanResult {
@@ -69,4 +71,41 @@ model CleanupAction {
   scanResult    ScanResult  @relation(fields: [scanResultId], references: [id], onDelete: Cascade)
 
   @@index([scanResultId])
+}
+
+model DriveScanResult {
+  id            String   @id @default(cuid())
+  accountId     String
+  fileId        String   @unique
+  fileName      String
+  mimeType      String
+  fileSize      Int      @default(0)
+  createdTime   String
+  modifiedTime  String
+  trashed       Boolean  @default(false)
+  webViewLink   String
+  scannedAt     DateTime @default(now())
+
+  account       GmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+}
+
+model PhotoScanResult {
+  id            String   @id @default(cuid())
+  accountId     String
+  photoId       String   @unique
+  filename      String
+  mimeType      String
+  fileSize      Int      @default(0)
+  width         Int      @default(0)
+  height        Int      @default(0)
+  creationTime  String
+  baseUrl       String
+  isFavorite    Boolean  @default(false)
+  scannedAt     DateTime @default(now())
+
+  account       GmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
 }
