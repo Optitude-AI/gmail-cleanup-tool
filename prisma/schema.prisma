@@ -38,6 +38,8 @@ model GmailAccount {
   scanResults      ScanResult[]
   driveScanResults DriveScanResult[]
   photoScanResults PhotoScanResult[]
+  cleanupSchedules CleanupSchedule[]
+  cleanupReports   CleanupReport[]
 }
 
 model ScanResult {
@@ -52,6 +54,7 @@ model ScanResult {
   emailCount    Int             @default(1)
   lastReceived  DateTime?
   unsubscribeUrl String?
+  importanceScore Float?
   scannedAt     DateTime        @default(now())
 
   account       GmailAccount    @relation(fields: [accountId], references: [id], onDelete: Cascade)
@@ -74,21 +77,26 @@ model CleanupAction {
 }
 
 model DriveScanResult {
-  id            String   @id @default(cuid())
-  accountId     String
-  fileId        String   @unique
-  fileName      String
-  mimeType      String
-  fileSize      Int      @default(0)
-  createdTime   String
-  modifiedTime  String
-  trashed       Boolean  @default(false)
-  webViewLink   String
-  scannedAt     DateTime @default(now())
+  id             String   @id @default(cuid())
+  accountId      String
+  fileId         String   @unique
+  fileName       String
+  mimeType       String
+  fileSize       Int      @default(0)
+  createdTime    String
+  modifiedTime   String
+  trashed        Boolean  @default(false)
+  webViewLink    String
+  sharedWithMe   Boolean  @default(false)
+  ownerEmail     String?
+  importanceScore Float?
+  hashSignature  String?
+  scannedAt      DateTime @default(now())
 
-  account       GmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account        GmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId])
+  @@index([hashSignature])
 }
 
 model PhotoScanResult {
@@ -103,9 +111,57 @@ model PhotoScanResult {
   creationTime  String
   baseUrl       String
   isFavorite    Boolean  @default(false)
+  hashSignature String?
   scannedAt     DateTime @default(now())
 
   account       GmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([hashSignature])
+}
+
+model CrossServiceDuplicate {
+  id              String   @id @default(cuid())
+  accountId       String
+  hashSignature   String
+  services        String
+  fileName        String
+  fileSize        Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([accountId])
+  @@index([hashSignature])
+}
+
+model CleanupSchedule {
+  id          String   @id @default(cuid())
+  accountId   String
+  name        String
+  enabled     Boolean  @default(true)
+  frequency   String   @default("weekly")
+  rules       String
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  totalCleaned Int      @default(0)
+  totalSaved   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  account     GmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+}
+
+model CleanupReport {
+  id          String   @id @default(cuid())
+  accountId   String
+  reportType  String
+  title       String
+  summary     String
+  stats       String
+  createdAt   DateTime @default(now())
+
+  account     GmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId])
 }
