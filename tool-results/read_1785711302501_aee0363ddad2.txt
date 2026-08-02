@@ -1,0 +1,743 @@
+     1→     1→     1→'use client'
+     2→     2→     2→
+     3→     3→     3→import React, { useState, useCallback, useEffect } from 'react'
+     4→     4→     4→import {
+     5→     5→     5→  Mail, Trash2, ScanSearch, Link2, Shield, ShieldAlert, Tag,
+     6→     6→     6→  ExternalLink, CheckCircle2, AlertCircle, XCircle,
+     7→     7→     7→  RefreshCw, Inbox, Search, BarChart3, Clock,
+     8→     8→     8→  Ban, LogIn, Loader2, ShieldCheck, Bell, Megaphone,
+     9→     9→     9→  Sparkles, Eye, Download, HardDrive, Image as ImageIcon,
+    10→    10→    10→  FolderOpen, FileText, Video, Music, Archive, File, Camera,
+    11→    11→    11→  AlertTriangle, Lightbulb, Zap, Star,
+    12→    12→    12→  Trash, PieChart, Calendar, Copy, TrendingDown,
+    13→    13→    13→  Timer, Wand2, ArchiveRestore, Share2, Brain,
+    14→    14→    14→  FileDown, Gauge, Rocket, History, ChevronRight,
+    15→    15→    15→  ArrowDown, ArrowUp, CircleDot, Target, Layers
+    16→    16→    16→} from 'lucide-react'
+    17→    17→    17→
+    18→    18→    18→import { Button } from '@/components/ui/button'
+    19→    19→    19→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+    20→    20→    20→import { Badge } from '@/components/ui/badge'
+    21→    21→    21→import { Checkbox } from '@/components/ui/checkbox'
+    22→    22→    22→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    23→    23→    23→import { Progress } from '@/components/ui/progress'
+    24→    24→    24→import { Separator } from '@/components/ui/separator'
+    25→    25→    25→import { ScrollArea } from '@/components/ui/scroll-area'
+    26→    26→    26→import { Alert, AlertDescription } from '@/components/ui/alert'
+    27→    27→    27→import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+    28→    28→    28→import { Input } from '@/components/ui/input'
+    29→    29→    29→import { Label } from '@/components/ui/label'
+    30→    30→    30→
+    31→    31→    31→// ── Types ──
+    32→    32→    32→interface GmailStats { total: number; subscriptions: number; promotions: number; sales: number; junk: number; totalEmails: number; withUnsubscribe: number }
+    33→    33→    33→interface GmailResult { id: string; category: string; senderEmail: string; senderName: string | null; subject: string | null; emailCount: number; lastReceived: string | null; unsubscribeUrl: string | null }
+    34→    34→    34→interface DriveStats { totalFiles: number; totalSize: number; totalSizeFormatted: string; trashedFiles: number; trashedSize: number; trashedSizeFormatted: string; largeFiles: number; duplicatesCount: number; byType: Record<string, { count: number; size: number }> }
+    35→    35→    35→interface DriveFile { id: string; name: string; mimeType: string; size: number; createdTime: string; modifiedTime: string; trashed: boolean; webViewLink: string }
+    36→    36→    36→interface SpaceSuggestion { id: string; type: string; title: string; description: string; potentialSavings: number; potentialSavingsFormatted: string; severity: string; fileIds: string[]; actionable: boolean }
+    37→    37→    37→interface PhotoStats { totalPhotos: number; totalSize: number; totalSizeFormatted: string; favorites: number; largePhotos: number }
+    38→    38→    38→interface PhotoItem { id: string; filename: string; mimeType: string; size: number; width: number; height: number; creationTime: string; baseUrl: string; isFavorite: boolean }
+    39→    39→    39→interface GmailAccount { id: string; email: string; createdAt: string }
+    40→    40→    40→interface UnifiedStorage { limit: number; used: number; usedFormatted: string; free: number; freeFormatted: string; percentUsed: number; gmail: { used: number; formatted: string }; drive: { used: number; formatted: string; trashSize: number }; photos: { used: number; formatted: string } }
+    41→    41→    41→interface StorageForecast { currentUsage: number; dailyGrowthRate: number; projectedFullDate: string; daysRemaining: number; weeklyGrowthFormatted: string; severity: string; recommendation: string }
+    42→    42→    42→interface CleanupStep { id: string; order: number; action: string; service: string; description: string; filesAffected: number; spaceFreed: number; spaceFreedFormatted: string; risk: string; riskExplanation: string; fileIds: string[] }
+    43→    43→    43→
+    44→    44→    44→const GMAIL_CAT: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string; border: string }> = {
+    45→    45→    45→  subscription: { label: 'Subscriptions', icon: <Bell className="h-4 w-4" />, color: 'text-orange-700', bg: 'bg-orange-50 dark:bg-orange-950/30', border: 'border-orange-200 dark:border-orange-800' },
+    46→    46→    46→  promotion: { label: 'Promotions', icon: <Megaphone className="h-4 w-4" />, color: 'text-purple-700', bg: 'bg-purple-50 dark:bg-purple-950/30', border: 'border-purple-200 dark:border-purple-800' },
+    47→    47→    47→  sales: { label: 'Sales', icon: <Tag className="h-4 w-4" />, color: 'text-emerald-700', bg: 'bg-emerald-50 dark:bg-emerald-950/30', border: 'border-emerald-200 dark:border-emerald-800' },
+    48→    48→    48→  junk: { label: 'Junk / Spam', icon: <Ban className="h-4 w-4" />, color: 'text-red-700', bg: 'bg-red-50 dark:bg-red-950/30', border: 'border-red-200 dark:border-red-800' },
+    49→    49→    49→}
+    50→    50→    50→
+    51→    51→    51→const FILE_ICONS: Record<string, React.ReactNode> = {
+    52→    52→    52→  Images: <ImageIcon className="h-5 w-5 text-pink-500" />,
+    53→    53→    53→  Videos: <Video className="h-5 w-5 text-red-500" />,
+    54→    54→    54→  Audio: <Music className="h-5 w-5 text-violet-500" />,
+    55→    55→    55→  PDFs: <FileText className="h-5 w-5 text-red-600" />,
+    56→    56→    56→  Documents: <FileText className="h-5 w-5 text-blue-500" />,
+    57→    57→    57→  Archives: <Archive className="h-5 w-5 text-yellow-600" />,
+    58→    58→    58→  'Other Files': <File className="h-5 w-5 text-slate-500" />,
+    59→    59→    59→}
+    60→    60→    60→
+    61→    61→    61→const SEV: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
+    62→    62→    62→  critical: { bg: 'bg-red-50 dark:bg-red-950/30 border-red-200', text: 'text-red-700', icon: <AlertTriangle className="h-5 w-5 text-red-500" /> },
+    63→    63→    63→  high: { bg: 'bg-orange-50 dark:bg-orange-950/30 border-orange-200', text: 'text-orange-700', icon: <AlertCircle className="h-5 w-5 text-orange-500" /> },
+    64→    64→    64→  medium: { bg: 'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200', text: 'text-yellow-700', icon: <Lightbulb className="h-5 w-5 text-yellow-500" /> },
+    65→    65→    65→  low: { bg: 'bg-blue-50 dark:bg-blue-950/30 border-blue-200', text: 'text-blue-700', icon: <Lightbulb className="h-5 w-5 text-blue-400" /> },
+    66→    66→    66→  safe: { bg: 'bg-green-50 dark:bg-green-950/30 border-green-200', text: 'text-green-700', icon: <ShieldCheck className="h-5 w-5 text-green-500" /> },
+    67→    67→    67→}
+    68→    68→    68→
+    69→    69→    69→const RISK_COLORS: Record<string, string> = {
+    70→    70→    70→  safe: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    71→    71→    71→  low: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    72→    72→    72→  medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+    73→    73→    73→  high: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    74→    74→    74→}
+    75→    75→    75→
+    76→    76→    76→function fmt(bytes: number): string {
+    77→    77→    77→  if (bytes === 0) return '0 B'
+    78→    78→    78→  const k = 1024, s = ['B', 'KB', 'MB', 'GB', 'TB']
+    79→    79→    79→  const i = Math.floor(Math.log(bytes) / Math.log(k))
+    80→    80→    80→  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${s[i]}`
+    81→    81→    81→}
+    82→    82→    82→
+    83→    83→    83→function getftype(m: string): string {
+    84→    84→    84→  if (m.startsWith('image/')) return 'Images'
+    85→    85→    85→  if (m.startsWith('video/')) return 'Videos'
+    86→    86→    86→  if (m.startsWith('audio/')) return 'Audio'
+    87→    87→    87→  if (m.includes('pdf')) return 'PDFs'
+    88→    88→    88→  if (m.includes('document') || m.includes('spreadsheet') || m.includes('presentation')) return 'Documents'
+    89→    89→    89→  if (m.includes('zip') || m.includes('rar') || m.includes('tar')) return 'Archives'
+    90→    90→    90→  return 'Other Files'
+    91→    91→    91→}
+    92→    92→    92→
+    93→    93→    93→function LoadingSpinner({ text }: { text: string }) {
+    94→    94→    94→  const [progress, setProgress] = useState(0)
+    95→    95→    95→  useEffect(() => { const i = setInterval(() => setProgress(p => Math.min(p + Math.random() * 12, 92)), 400); return () => clearInterval(i) }, [])
+    96→    96→    96→  return (
+    97→    97→    97→    <div className="flex flex-col items-center justify-center py-12 gap-6">
+    98→    98→    98→      <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-950/40 dark:to-orange-950/40 flex items-center justify-center animate-pulse"><ScanSearch className="h-8 w-8 text-red-500 animate-spin" /></div>
+    99→    99→    99→      <div className="text-center space-y-2"><h2 className="text-xl font-bold text-slate-900 dark:text-white">{text}</h2></div>
+   100→   100→   100→      <div className="w-64"><Progress value={progress} className="h-2" /></div>
+   101→   101→   101→    </div>
+   102→   102→   102→  )
+   103→   103→   103→}
+   104→   104→   104→
+   105→   105→   105→// ═══════════════════════════════════════════════════════════
+   106→   106→   106→// MAIN PAGE
+   107→   107→   107→// ═══════════════════════════════════════════════════════════
+   108→   108→   108→export default function GoogleCleanupPage() {
+   109→   109→   109→  // Auth
+   110→   110→   110→  const [account, setAccount] = useState<GmailAccount | null>(null)
+   111→   111→   111→  const [isConnecting, setIsConnecting] = useState(false)
+   112→   112→   112→  const [authUrl, setAuthUrl] = useState('')
+   113→   113→   113→  const [authCode, setAuthCode] = useState('')
+   114→   114→   114→  const [error, setError] = useState<string | null>(null)
+   115→   115→   115→
+   116→   116→   116→  // Tab
+   117→   117→   117→  const [tab, setTab] = useState('overview')
+   118→   118→   118→
+   119→   119→   119→  // Gmail
+   120→   120→   120→  const [scanningGmail, setScanningGmail] = useState(false)
+   121→   121→   121→  const [gmailStats, setGmailStats] = useState<GmailStats | null>(null)
+   122→   122→   122→  const [gmailResults, setGmailResults] = useState<GmailResult[]>([])
+   123→   123→   123→  const [gmailSel, setGmailSel] = useState<Set<string>>(new Set())
+   124→   124→   124→  const [gmailTab, setGmailTab] = useState('all')
+   125→   125→   125→  const [gmailSearch, setGmailSearch] = useState('')
+   126→   126→   126→
+   127→   127→   127→  // Drive
+   128→   128→   128→  const [scanningDrive, setScanningDrive] = useState(false)
+   129→   129→   129→  const [driveStats, setDriveStats] = useState<DriveStats | null>(null)
+   130→   130→   130→  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([])
+   131→   131→   131→  const [driveSel, setDriveSel] = useState<Set<string>>(new Set())
+   132→   132→   132→  const [driveSearch, setDriveSearch] = useState('')
+   133→   133→   133→  const [driveFilter, setDriveFilter] = useState('all')
+   134→   134→   134→  const [driveSuggestions, setDriveSuggestions] = useState<SpaceSuggestion[]>([])
+   135→   135→   135→
+   136→   136→   136→  // Photos
+   137→   137→   137→  const [scanningPhotos, setScanningPhotos] = useState(false)
+   138→   138→   138→  const [photoStats, setPhotoStats] = useState<PhotoStats | null>(null)
+   139→   139→   139→  const [photoItems, setPhotoItems] = useState<PhotoItem[]>([])
+   140→   140→   140→  const [photoSel, setPhotoSel] = useState<Set<string>>(new Set())
+   141→   141→   141→
+   142→   142→   142→  // Unified
+   143→   143→   143→  const [unifiedStorage, setUnifiedStorage] = useState<UnifiedStorage | null>(null)
+   144→   144→   144→  const [forecast, setForecast] = useState<StorageForecast | null>(null)
+   145→   145→   145→  const [loadingStorage, setLoadingStorage] = useState(false)
+   146→   146→   146→
+   147→   147→   147→  // Wizard
+   148→   148→   148→  const [wizardTarget, setWizardTarget] = useState(1)
+   149→   149→   149→  const [wizardPlan, setWizardPlan] = useState<any>(null)
+   150→   150→   150→  const [wizardLoading, setWizardLoading] = useState(false)
+   151→   151→   151→
+   152→   152→   152→  // Dedup
+   153→   153→   153→  const [dedupResults, setDedupResults] = useState<any[] | null>(null)
+   154→   154→   154→  const [dedupLoading, setDedupLoading] = useState(false)
+   155→   155→   155→
+   156→   156→   156→  // Schedules
+   157→   157→   157→  const [schedules, setSchedules] = useState<any[]>([])
+   158→   158→   158→  const [schedulesLoading, setSchedulesLoading] = useState(false)
+   159→   159→   159→
+   160→   160→   160→  // Reports
+   161→   161→   161→  const [reports, setReports] = useState<any[]>([])
+   162→   162→   162→
+   163→   163→   163→  // Shared
+   164→   164→   164→  const [sharedFiles, setSharedFiles] = useState<any[] | null>(null)
+   165→   165→   165→  const [sharedLoading, setSharedLoading] = useState(false)
+   166→   166→   166→
+   167→   167→   167→  // Delete
+   168→   168→   168→  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; service: string; title: string; ids: string[] }>({ open: false, service: '', title: '', ids: [] })
+   169→   169→   169→  const [isDeleting, setIsDeleting] = useState(false)
+   170→   170→   170→  const [deleteResult, setDeleteResult] = useState<string | null>(null)
+   171→   171→   171→  const [isDownloading, setIsDownloading] = useState(false)
+   172→   172→   172→
+   173→   173→   173→  // Backup
+   174→   174→   174→  const [backupDialog, setBackupDialog] = useState(false)
+   175→   175→   175→  const [backupItems, setBackupItems] = useState<any[]>([])
+   176→   176→   176→  const [backupLoading, setBackupLoading] = useState(false)
+   177→   177→   177→
+   178→   178→   178→  const checkExisting = useCallback(async () => {
+   179→   179→   179→    try { const r = await fetch('/api/gmail/status'); const d = await r.json(); if (d.accounts?.length > 0) setAccount(d.accounts[0]) } catch { /* */ }
+   180→   180→   180→  }, [])
+   181→   181→   181→
+   182→   182→   182→  // ── Auth ──
+   183→   183→   183→  const startOAuth = async () => {
+   184→   184→   184→    setIsConnecting(true); setError(null)
+   185→   185→   185→    try { const r = await fetch('/api/gmail/auth'); const d = await r.json(); if (d.authUrl) { setAuthUrl(d.authUrl); window.open(d.authUrl, '_blank', 'width=600,height=700') } else setError('Check Google API credentials.') } catch { setError('Failed.') }
+   186→   186→   186→    setIsConnecting(false)
+   187→   187→   187→  }
+   188→   188→   188→  const handleCallback = async () => {
+   189→   189→   189→    if (!authCode.trim()) return
+   190→   190→   190→    setIsConnecting(true); setError(null)
+   191→   191→   191→    try { const r = await fetch('/api/gmail/callback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: authCode.trim(), userId: 'default-user' }) }); const d = await r.json(); if (d.success) { setAccount({ id: d.accountId, email: d.email, createdAt: new Date().toISOString() }); setAuthCode(''); setAuthUrl('') } else setError(d.error) } catch { setError('Failed.') }
+   192→   192→   192→    setIsConnecting(false)
+   193→   193→   193→  }
+   194→   194→   194→
+   195→   195→   195→  // ── Scan functions ──
+   196→   196→   196→  const scanGmail = async () => {
+   197→   197→   197→    if (!account) return; setScanningGmail(true); setError(null)
+   198→   198→   198→    try { const r = await fetch('/api/gmail/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account.id }) }); const d = await r.json(); if (d.success) { setGmailStats(d.stats); setGmailResults(d.results) } else setError(d.error) } catch { setError('Gmail scan failed.') }
+   199→   199→   199→    setScanningGmail(false)
+   200→   200→   200→  }
+   201→   201→   201→  const scanDrive = async () => {
+   202→   202→   202→    if (!account) return; setScanningDrive(true); setError(null)
+   203→   203→   203→    try {
+   204→   204→   204→      const r = await fetch('/api/drive/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account.id }) }); const d = await r.json()
+   205→   205→   205→      if (d.success) { setDriveStats(d.stats); setDriveFiles(d.files) } else setError(d.error)
+   206→   206→   206→      const sr = await fetch('/api/drive/suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account.id }) }); const sd = await sr.json(); if (sd.success) setDriveSuggestions(sd.suggestions)
+   207→   207→   207→    } catch { setError('Drive scan failed.') }
+   208→   208→   208→    setScanningDrive(false)
+   209→   209→   209→  }
+   210→   210→   210→  const scanPhotos = async () => {
+   211→   211→   211→    if (!account) return; setScanningPhotos(true); setError(null)
+   212→   212→   212→    try { const r = await fetch('/api/photos/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account.id }) }); const d = await r.json(); if (d.success) { setPhotoStats(d.stats); setPhotoItems(d.photos) } else setError(d.error) } catch { setError('Photos scan failed.') }
+   213→   213→   213→    setScanningPhotos(false)
+   214→   214→   214→  }
+   215→   215→   215→  const loadStorage = async () => {
+   216→   216→   216→    if (!account) return; setLoadingStorage(true)
+   217→   217→   217→    try {
+   218→   218→   218→      const [sr, fr] = await Promise.all([
+   219→   219→   219→        fetch('/api/storage/unified', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account.id }) }),
+   220→   220→   220→        fetch('/api/storage/forecast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account.id }) }),
+   221→   221→   221→      ])
+   222→   222→   222→      const sd = await sr.json(); const fd = await fr.json()
+   223→   223→   223→      if (sd.success) setUnifiedStorage(sd.storage)
+   224→   224→   224→      if (fd.success) setForecast(fd.forecast)
+   225→   225→   225→    } catch { /* */ }
+   226→   226→   226→    setLoadingStorage(false)
+   227→   227→   227→  }
+   228→   228→   228→  const runWizard = async () => {
+   229→   229→   229→    if (!account) return; setWizardLoading(true)
+   230→   230→   230→    try { const r = await fetch('/api/wizard/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account.id, targetGB: wizardTarget }) }); const d = await r.json(); if (d.success) setWizardPlan(d.plan) } catch { setError('Wizard failed.') }
+   231→   231→   231→    setWizardLoading(false)
+   232→   232→   232→  }
+   233→   233→   233→  const runDedup = async () => {
+   234→   234→   234→    if (!account) return; setDedupLoading(true)
+   235→   235→   235→    try { const r = await fetch('/api/dedup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account.id }) }); const d = await r.json(); if (d.success) setDedupResults(d.duplicates) } catch { setError('Dedup failed.') }
+   236→   236→   236→    setDedupLoading(false)
+   237→   237→   237→  }
+   238→   238→   238→  const loadSchedules = async () => {
+   239→   239→   239→    if (!account) return; setSchedulesLoading(true)
+   240→   240→   240→    try { const r = await fetch(`/api/schedules?accountId=${account.id}`); const d = await r.json(); if (d.success) setSchedules(d.schedules) } catch { /* */ }
+   241→   241→   241→    setSchedulesLoading(false)
+   242→   242→   242→  }
+   243→   243→   243→  const loadShared = async () => {
+   244→   244→   244→    if (!account) return; setSharedLoading(true)
+   245→   245→   245→    try { const r = await fetch('/api/shared/find', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account.id }) }); const d = await r.json(); if (d.success) setSharedFiles(d.files) } catch { setError('Shared files scan failed.') }
+   246→   246→   246→    setSharedLoading(false)
+   247→   247→   247→  }
+   248→   248→   248→
+   249→   249→   249→  // ── Download ──
+   250→   250→   250→  const downloadFile = async (service: string, fileId: string, fileName: string, baseUrl?: string) => {
+   251→   251→   251→    setIsDownloading(true)
+   252→   252→   252→    try { const r = await fetch(`/api/${service}/download`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account?.id, fileId, baseUrl }) }); if (r.ok) { const b = await r.blob(); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = fileName; a.click(); URL.revokeObjectURL(u) } else setError('Download failed.') } catch { setError('Download failed.') }
+   253→   253→   253→    setIsDownloading(false)
+   254→   254→   254→  }
+   255→   255→   255→
+   256→   256→   256→  // ── Backup ZIP ──
+   257→   257→   257→  const startBackup = (items: any[], service: string) => {
+   258→   258→   258→    setBackupItems(items.map((i: any) => ({ fileId: i.id || i.fileId, fileName: i.name || i.fileName, service })))
+   259→   259→   259→    setBackupDialog(true)
+   260→   260→   260→  }
+   261→   261→   261→  const executeBackup = async () => {
+   262→   262→   262→    if (!account) return; setBackupLoading(true)
+   263→   263→   263→    try { const r = await fetch('/api/backup/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account.id, items: backupItems }) }); if (r.ok) { const b = await r.blob(); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = 'backup.zip'; a.click(); URL.revokeObjectURL(u); setDeleteResult('Backup downloaded successfully!') } else setError('Backup failed.') } catch { setError('Backup failed.') }
+   264→   264→   264→    setBackupLoading(false); setBackupDialog(false)
+   265→   265→   265→  }
+   266→   266→   266→
+   267→   267→   267→  // ── Delete ──
+   268→   268→   268→  const openDelete = (service: string, title: string, ids: string[]) => setDeleteDialog({ open: true, service, title, ids })
+   269→   269→   269→  const confirmDelete = async () => {
+   270→   270→   270→    if (!account) return; setIsDeleting(true)
+   271→   271→   271→    try { const r = await fetch(`/api/${deleteDialog.service}/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: account.id, fileIds: deleteDialog.ids }) }); const d = await r.json(); if (d.success) { setDeleteResult(d.message); setDeleteDialog({ ...deleteDialog, open: false }) } else setError(d.error) } catch { setError('Delete failed.') }
+   272→   272→   272→    setIsDeleting(false)
+   273→   273→   273→  }
+   274→   274→   274→
+   275→   275→   275→  // ── Gmail helpers ──
+   276→   276→   276→  const gmailFiltered = gmailResults.filter(r => { const ms = !gmailSearch || r.senderEmail.toLowerCase().includes(gmailSearch.toLowerCase()) || r.senderName?.toLowerCase().includes(gmailSearch.toLowerCase()); const mt = gmailTab === 'all' || r.category === gmailTab; return ms && mt }).sort((a, b) => b.emailCount - a.emailCount)
+   277→   277→   277→  const gmailToggle = (id: string) => setGmailSel(prev => { const n = new Set(prev); if (n.has(id)) { n.delete(id) } else { n.add(id) }; return n })
+   278→   278→   278→
+   279→   279→   279→  // ── Drive helpers ──
+   280→   280→   280→  const driveFiltered = driveFiles.filter(f => { const ms = !driveSearch || f.name.toLowerCase().includes(driveSearch.toLowerCase()); const mt = driveFilter === 'all' || driveFilter === 'trashed' ? (driveFilter === 'trashed' ? f.trashed : !f.trashed) : getftype(f.mimeType) === driveFilter; return ms && mt }).sort((a, b) => b.size - a.size)
+   281→   281→   281→  const driveToggle = (id: string) => setDriveSel(prev => { const n = new Set(prev); if (n.has(id)) { n.delete(id) } else { n.add(id) }; return n })
+   282→   282→   282→
+   283→   283→   283→  // ── Photo helpers ──
+   284→   284→   284→  const photoToggle = (id: string) => setPhotoSel(prev => { const n = new Set(prev); if (n.has(id)) { n.delete(id) } else { n.add(id) }; return n })
+   285→   285→   285→
+   286→   286→   286→  // ═══════════════════════ RENDER ═══════════════════════
+   287→   287→   287→
+   288→   288→   288→  if (!account) {
+   289→   289→   289→    return (
+   290→   290→   290→      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+   291→   291→   291→        <div className="container mx-auto max-w-2xl px-4 py-16">
+   292→   292→   292→          <div className="flex flex-col items-center gap-8 text-center">
+   293→   293→   293→            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 shadow-lg"><HardDrive className="h-10 w-10 text-white" /></div>
+   294→   294→   294→            <div className="space-y-3">
+   295→   295→   295→              <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">Google Cleanup Tool</h1>
+   296→   296→   296→              <p className="text-lg text-slate-600 dark:text-slate-400 max-w-lg">Clean up Gmail, Drive &amp; Photos with smart suggestions, backup-before-delete, scheduled cleanup, and AI-powered insights.</p>
+   297→   297→   297→            </div>
+   298→   298→   298→            <div className="grid gap-4 w-full max-w-lg sm:grid-cols-5">
+   299→   299→   299→              {[
+   300→   300→   300→                { icon: <Gauge className="h-5 w-5" />, t: 'Unified', d: 'Cross-service storage gauge' },
+   301→   301→   301→                { icon: <Mail className="h-5 w-5" />, t: 'Gmail', d: 'Unsubscribe & bulk delete' },
+   302→   302→   302→                { icon: <HardDrive className="h-5 w-5" />, t: 'Drive', d: 'Large files & duplicates' },
+   303→   303→   303→                { icon: <Camera className="h-5 w-5" />, t: 'Photos', d: 'Photo storage management' },
+   304→   304→   304→                { icon: <Wand2 className="h-5 w-5" />, t: 'Smart', d: 'AI wizard & scheduling' },
+   305→   305→   305→              ].map(i => (
+   306→   306→   306→                <div key={i.t} className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 p-3">
+   307→   307→   307→                  <div className="text-orange-500">{i.icon}</div>
+   308→   308→   308→                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">{i.t}</span>
+   309→   309→   309→                  <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">{i.d}</span>
+   310→   310→   310→                </div>
+   311→   311→   311→              ))}
+   312→   312→   312→            </div>
+   313→   313→   313→            <Card className="w-full max-w-lg">
+   314→   314→   314→              <CardHeader>
+   315→   315→   315→                <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-red-500" />Connect Your Google Account</CardTitle>
+   316→   316→   316→                <CardDescription>Secure OAuth2 access to Gmail, Drive, and Photos.</CardDescription>
+   317→   317→   317→              </CardHeader>
+   318→   318→   318→              <CardContent className="space-y-4">
+   319→   319→   319→                {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
+   320→   320→   320→                <Button onClick={startOAuth} disabled={isConnecting} className="w-full h-12 text-base font-semibold" size="lg">
+   321→   321→   321→                  {isConnecting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <LogIn className="mr-2 h-5 w-5" />}{isConnecting ? 'Connecting...' : 'Connect with Google'}
+   322→   322→   322→                </Button>
+   323→   323→   323→                {authUrl && (
+   324→   324→   324→                  <div className="space-y-3 pt-2">
+   325→   325→   325→                    <div className="flex items-center gap-2 text-sm text-muted-foreground"><Separator className="flex-1" /><span>or paste authorization code</span><Separator className="flex-1" /></div>
+   326→   326→   326→                    <div className="flex gap-2"><Input value={authCode} onChange={e => setAuthCode(e.target.value)} placeholder="Paste the authorization code..." className="flex-1" /><Button onClick={handleCallback} disabled={!authCode.trim() || isConnecting}>Verify</Button></div>
+   327→   327→   327→                  </div>
+   328→   328→   328→                )}
+   329→   329→   329→              </CardContent>
+   330→   330→   330→            </Card>
+   331→   331→   331→          </div>
+   332→   332→   332→        </div>
+   333→   333→   333→      </div>
+   334→   334→   334→    )
+   335→   335→   335→  }
+   336→   336→   336→
+   337→   337→   337→  return (
+   338→   338→   338→    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+   339→   339→   339→      {/* Header */}
+   340→   340→   340→      <header className="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg">
+   341→   341→   341→        <div className="container mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+   342→   342→   342→          <div className="flex items-center gap-3">
+   343→   343→   343→            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-orange-500"><HardDrive className="h-5 w-5 text-white" /></div>
+   344→   344→   344→            <div><h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Google Cleanup</h1><p className="text-xs text-slate-500 dark:text-slate-400">{account.email}</p></div>
+   345→   345→   345→          </div>
+   346→   346→   346→          <Button variant="outline" size="sm" onClick={() => { setAccount(null); setGmailStats(null); setDriveStats(null); setPhotoStats(null); setUnifiedStorage(null); setForecast(null) }} className="text-slate-600">Disconnect</Button>
+   347→   347→   347→        </div>
+   348→   348→   348→      </header>
+   349→   349→   349→
+   350→   350→   350→      <main className="container mx-auto max-w-7xl px-4 py-6 space-y-6">
+   351→   351→   351→        {deleteResult && (
+   352→   352→   352→          <Alert className="border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30"><CheckCircle2 className="h-4 w-4 text-emerald-600" /><AlertDescription className="text-emerald-800 dark:text-emerald-200 font-medium">{deleteResult}</AlertDescription><Button variant="ghost" size="sm" className="ml-auto text-emerald-600" onClick={() => setDeleteResult(null)}><XCircle className="h-4 w-4" /></Button></Alert>
+   353→   353→   353→        )}
+   354→   354→   354→        {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
+   355→   355→   355→
+   356→   356→   356→        {/* ═══════════ MAIN TABS ═══════════ */}
+   357→   357→   357→        <Tabs value={tab} onValueChange={v => { setTab(v); if (v === 'overview' || v === 'wizard') loadStorage(); if (v === 'schedules') loadSchedules() }}>
+   358→   358→   358→          <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
+   359→   359→   359→            <TabsList className="grid w-full grid-cols-7 shrink-0">
+   360→   360→   360→              <TabsTrigger value="overview" className="gap-1 text-xs"><Gauge className="h-4 w-4" />Overview</TabsTrigger>
+   361→   361→   361→              <TabsTrigger value="gmail" className="gap-1 text-xs"><Mail className="h-4 w-4" />Gmail</TabsTrigger>
+   362→   362→   362→              <TabsTrigger value="drive" className="gap-1 text-xs"><HardDrive className="h-4 w-4" />Drive</TabsTrigger>
+   363→   363→   363→              <TabsTrigger value="photos" className="gap-1 text-xs"><Camera className="h-4 w-4" />Photos</TabsTrigger>
+   364→   364→   364→              <TabsTrigger value="wizard" className="gap-1 text-xs"><Wand2 className="h-4 w-4" />Wizard</TabsTrigger>
+   365→   365→   365→              <TabsTrigger value="tools" className="gap-1 text-xs"><Zap className="h-4 w-4" />Tools</TabsTrigger>
+   366→   366→   366→              <TabsTrigger value="history" className="gap-1 text-xs"><History className="h-4 w-4" />History</TabsTrigger>
+   367→   367→   367→            </TabsList>
+   368→   368→   368→          </div>
+   369→   369→   369→
+   370→   370→   370→          {/* ═══ OVERVIEW TAB ═══ */}
+   371→   371→   371→          <TabsContent value="overview" className="mt-6 space-y-6">
+   372→   372→   372→            {loadingStorage && <LoadingSpinner text="Loading storage data..." />}
+   373→   373→   373→            {!loadingStorage && unifiedStorage && (
+   374→   374→   374→              <>
+   375→   375→   375→                {/* Unified Storage Gauge */}
+   376→   376→   376→                <Card>
+   377→   377→   377→                  <CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><Gauge className="h-4 w-4" />Unified Storage Overview</CardTitle></CardHeader>
+   378→   378→   378→                  <CardContent>
+   379→   379→   379→                    <div className="flex items-center gap-6 flex-wrap">
+   380→   380→   380→                      <div className="relative flex h-32 w-32 items-center justify-center">
+   381→   381→   381→                        <svg className="h-32 w-32 -rotate-90" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" strokeWidth="3" className="text-slate-200 dark:text-slate-700" /><circle cx="18" cy="18" r="15.9" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray={`${unifiedStorage.percentUsed * 100}, 100`} className={unifiedStorage.percentUsed > 0.85 ? 'text-red-500' : unifiedStorage.percentUsed > 0.7 ? 'text-orange-500' : 'text-emerald-500'} strokeLinecap="round" /></svg>
+   382→   382→   382→                        <div className="absolute text-center"><p className="text-2xl font-bold text-slate-900 dark:text-white">{Math.round(unifiedStorage.percentUsed * 100)}%</p><p className="text-[10px] text-muted-foreground">used</p></div>
+   383→   383→   383→                      </div>
+   384→   384→   384→                      <div className="flex-1 space-y-3 min-w-[200px]">
+   385→   385→   385→                        <div className="flex items-center justify-between"><span className="text-sm font-medium text-slate-700 dark:text-slate-300">Total Used</span><span className="text-sm font-bold text-slate-900 dark:text-white">{unifiedStorage.usedFormatted}</span></div>
+   386→   386→   386→                        <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Free Space</span><span className="text-sm text-slate-700 dark:text-slate-300">{unifiedStorage.freeFormatted}</span></div>
+   387→   387→   387→                        <Separator />
+   388→   388→   388→                        <div className="grid gap-2">
+   389→   389→   389→                          {[
+   390→   390→   390→                            { label: 'Gmail', size: unifiedStorage.gmail.formatted, color: 'bg-red-400' },
+   391→   391→   391→                            { label: 'Drive', size: unifiedStorage.drive.formatted, color: 'bg-blue-400' },
+   392→   392→   392→                            { label: 'Photos', size: unifiedStorage.photos.formatted, color: 'bg-pink-400' },
+   393→   393→   393→                          ].map(s => (
+   394→   394→   394→                            <div key={s.label} className="flex items-center gap-2"><div className={`h-3 w-3 rounded-full ${s.color}`} /><span className="text-xs text-muted-foreground w-16">{s.label}</span><span className="text-xs font-medium">{s.size}</span></div>
+   395→   395→   395→                          ))}
+   396→   396→   396→                        </div>
+   397→   397→   397→                      </div>
+   398→   398→   398→                      {/* Forecast */}
+   399→   399→   399→                      {forecast && (
+   400→   400→   400→                        <Card className={`border ${SEV[forecast.severity]?.bg || SEV.low.bg} min-w-[220px]`}>
+   401→   401→   401→                          <CardContent className="p-4">
+   402→   402→   402→                            <div className="flex items-center gap-2 mb-2">{SEV[forecast.severity]?.icon}<span className={`text-xs font-semibold uppercase ${SEV[forecast.severity]?.text}`}>Storage Forecast</span></div>
+   403→   403→   403→                            <p className="text-sm font-bold">{forecast.daysRemaining > 0 ? `${forecast.daysRemaining} days remaining` : 'Storage full!'}</p>
+   404→   404→   404→                            {forecast.daysRemaining > 0 && <p className="text-xs text-muted-foreground mt-1">Full by {new Date(forecast.projectedFullDate).toLocaleDateString()}</p>}
+   405→   405→   405→                            <p className="text-xs text-muted-foreground mt-1">Growing ~{forecast.weeklyGrowthFormatted}/week</p>
+   406→   406→   406→                            <p className="text-xs mt-2">{forecast.recommendation}</p>
+   407→   407→   407→                          </CardContent>
+   408→   408→   408→                        </Card>
+   409→   409→   409→                      )}
+   410→   410→   410→                    </div>
+   411→   411→   411→                  </CardContent>
+   412→   412→   412→                </Card>
+   413→   413→   413→                {/* Quick Actions */}
+   414→   414→   414→                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+   415→   415→   415→                  {[
+   416→   416→   416→                    { icon: <ScanSearch className="h-5 w-5" />, t: 'Scan Gmail', d: 'Find junk & subscriptions', c: scanGmail, loading: scanningGmail },
+   417→   417→   417→                    { icon: <FolderOpen className="h-5 w-5" />, t: 'Scan Drive', d: 'Find large & duplicate files', c: scanDrive, loading: scanningDrive },
+   418→   418→   418→                    { icon: <Camera className="h-5 w-5" />, t: 'Scan Photos', d: 'Photo storage analysis', c: scanPhotos, loading: scanningPhotos },
+   419→   419→   419→                    { icon: <Wand2 className="h-5 w-5" />, t: 'Smart Cleanup', d: 'AI-powered cleanup wizard', c: () => setTab('wizard'), loading: false },
+   420→   420→   420→                  ].map(a => (
+   421→   421→   421→                    <Card key={a.t} className="cursor-pointer hover:shadow-md transition-shadow" onClick={a.loading ? undefined : a.c}>
+   422→   422→   422→                      <CardContent className="p-4 flex items-center gap-3">
+   423→   423→   423→                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0">{a.loading ? <Loader2 className="h-5 w-5 animate-spin text-orange-500" /> : a.icon}</div>
+   424→   424→   424→                        <div><p className="text-sm font-semibold">{a.t}</p><p className="text-xs text-muted-foreground">{a.d}</p></div>
+   425→   425→   425→                      </CardContent>
+   426→   426→   426→                    </Card>
+   427→   427→   427→                  ))}
+   428→   428→   428→                </div>
+   429→   429→   429→              </>
+   430→   430→   430→            )}
+   431→   431→   431→            {!loadingStorage && !unifiedStorage && (
+   432→   432→   432→              <div className="flex flex-col items-center py-12 gap-4">
+   433→   433→   433→                <p className="text-muted-foreground">Connect your Google account and load storage data to see your unified overview.</p>
+   434→   434→   434→                <Button onClick={loadStorage} className="gap-2"><Gauge className="h-4 w-4" />Load Storage Data</Button>
+   435→   435→   435→              </div>
+   436→   436→   436→            )}
+   437→   437→   437→          </TabsContent>
+   438→   438→   438→
+   439→   439→   439→          {/* ═══ GMAIL TAB ═══ */}
+   440→   440→   440→          <TabsContent value="gmail" className="mt-6 space-y-6">
+   441→   441→   441→            {!gmailStats && !scanningGmail && <div className="flex flex-col items-center py-12 gap-4"><Sparkles className="h-10 w-10 text-red-500" /><h2 className="text-xl font-bold">Scan Gmail</h2><p className="text-slate-600 dark:text-slate-400 text-center max-w-md">Find subscriptions, promotional emails, junk mail. Unsubscribe or delete in bulk.</p><Button onClick={scanGmail} size="lg" className="gap-2"><ScanSearch className="h-5 w-5" />Scan My Gmail</Button></div>}
+   442→   442→   442→            {scanningGmail && <LoadingSpinner text="Scanning Gmail..." />}
+   443→   443→   443→            {gmailStats && !scanningGmail && (
+   444→   444→   444→              <>
+   445→   445→   445→                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+   446→   446→   446→                  <Card><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Senders</p><p className="text-xl font-bold">{gmailStats.total}</p><p className="text-[10px] text-muted-foreground">{gmailStats.totalEmails} emails</p></CardContent></Card>
+   447→   447→   447→                  {(['subscription', 'promotion', 'sales', 'junk'] as const).map(cat => { const c = GMAIL_CAT[cat]; const n = gmailStats[cat as keyof GmailStats] as number; return <Card key={cat} className={c.border}><CardContent className="p-3"><div className="flex items-center justify-between"><div><p className="text-[10px] font-medium text-muted-foreground uppercase">{c.label}</p><p className="text-xl font-bold">{n}</p></div><span className={c.color}>{c.icon}</span></div></CardContent></Card> })}
+   448→   448→   448→                </div>
+   449→   449→   449→                <div className="flex gap-2 flex-wrap">
+   450→   450→   450→                  <div className="relative flex-1 min-w-[200px]"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input value={gmailSearch} onChange={e => setGmailSearch(e.target.value)} placeholder="Search senders..." className="pl-9" /></div>
+   451→   451→   451→                  {gmailSel.size > 0 && <><Badge variant="secondary">{gmailSel.size}</Badge><Button variant="destructive" size="sm" className="gap-1" onClick={() => openDelete('gmail', `Delete ${gmailSel.size} Senders`, [])}><Trash2 className="h-4 w-4" /></Button><Button variant="outline" size="sm" onClick={() => startBackup(gmailFiltered.filter(r => gmailSel.has(r.id)), 'gmail')} className="gap-1"><ArchiveRestore className="h-4 w-4" /></Button></>}
+   452→   452→   452→                  <Button variant="outline" size="sm" onClick={scanGmail} className="gap-1"><RefreshCw className="h-3 w-3" /></Button>
+   453→   453→   453→                </div>
+   454→   454→   454→                <Tabs value={gmailTab} onValueChange={setGmailTab}>
+   455→   455→   455→                  <TabsList className="grid w-full grid-cols-5">
+   456→   456→   456→                    <TabsTrigger value="all">All</TabsTrigger>
+   457→   457→   457→                    {(['subscription', 'promotion', 'sales', 'junk'] as const).map(c => <TabsTrigger key={c} value={c} className="text-xs">{GMAIL_CAT[c].label}</TabsTrigger>)}
+   458→   458→   458→                  </TabsList>
+   459→   459→   459→                  <TabsContent value={gmailTab} className="mt-3">
+   460→   460→   460→                    <ScrollArea className="max-h-[500px]">
+   461→   461→   461→                      <div className="space-y-2">
+   462→   462→   462→                        {gmailFiltered.map(r => { const c = GMAIL_CAT[r.category] || GMAIL_CAT.subscription; return (
+   463→   463→   463→                          <Card key={r.id} className={`${c.border} ${gmailSel.has(r.id) ? 'ring-2 ring-primary' : ''}`}>
+   464→   464→   464→                            <CardContent className="p-3">
+   465→   465→   465→                              <div className="flex items-center gap-3">
+   466→   466→   466→                                <Checkbox checked={gmailSel.has(r.id)} onCheckedChange={() => gmailToggle(r.id)} />
+   467→   467→   467→                                <div className="flex-1 min-w-0">
+   468→   468→   468→                                  <div className="flex items-center gap-2 flex-wrap"><span className={`font-semibold text-sm ${c.color}`}>{r.senderName || r.senderEmail}</span><Badge variant="outline" className={`${c.bg} ${c.color} border-0 text-[10px] px-1`}>{c.label}</Badge><Badge variant="secondary" className="text-[10px]">{r.emailCount}</Badge></div>
+   469→   469→   469→                                  <p className="text-xs text-muted-foreground truncate">{r.senderEmail}</p>
+   470→   470→   470→                                  {r.unsubscribeUrl && <a href={r.unsubscribeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline mt-1"><Link2 className="h-3 w-3" />Unsubscribe</a>}
+   471→   471→   471→                                </div>
+   472→   472→   472→                              </div>
+   473→   473→   473→                            </CardContent>
+   474→   474→   474→                          </Card>
+   475→   475→   475→                        )})}
+   476→   476→   476→                      </div>
+   477→   477→   477→                    </ScrollArea>
+   478→   478→   478→                  </TabsContent>
+   479→   479→   479→                </Tabs>
+   480→   480→   480→              </>
+   481→   481→   481→            )}
+   482→   482→   482→          </TabsContent>
+   483→   483→   483→
+   484→   484→   484→          {/* ═══ DRIVE TAB ═══ */}
+   485→   485→   485→          <TabsContent value="drive" className="mt-6 space-y-6">
+   486→   486→   486→            {!driveStats && !scanningDrive && <div className="flex flex-col items-center py-12 gap-4"><FolderOpen className="h-10 w-10 text-blue-500" /><h2 className="text-xl font-bold">Scan Drive</h2><Button onClick={scanDrive} size="lg" className="gap-2"><ScanSearch className="h-5 w-5" />Scan Drive</Button></div>}
+   487→   487→   487→            {scanningDrive && <LoadingSpinner text="Scanning Drive..." />}
+   488→   488→   488→            {driveStats && !scanningDrive && (
+   489→   489→   489→              <>
+   490→   490→   490→                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+   491→   491→   491→                  <Card><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Storage</p><p className="text-xl font-bold">{driveStats.totalSizeFormatted}</p></CardContent></Card>
+   492→   492→   492→                  <Card className="border-red-200"><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Trash</p><p className="text-xl font-bold text-red-600">{driveStats.trashedSizeFormatted}</p></CardContent></Card>
+   493→   493→   493→                  <Card className="border-orange-200"><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Large Files</p><p className="text-xl font-bold text-orange-600">{driveStats.largeFiles}</p></CardContent></Card>
+   494→   494→   494→                  <Card className="border-yellow-200"><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Duplicates</p><p className="text-xl font-bold text-yellow-600">{driveStats.duplicatesCount}</p></CardContent></Card>
+   495→   495→   495→                </div>
+   496→   496→   496→                {driveSuggestions.length > 0 && (
+   497→   497→   497→                  <Card><CardHeader className="pb-3"><CardTitle className="text-sm flex items-center gap-2"><Lightbulb className="h-4 w-4 text-yellow-500" />Smart Suggestions</CardTitle></CardHeader>
+   498→   498→   498→                    <CardContent className="space-y-3">
+   499→   499→   499→                      {driveSuggestions.slice(0, 3).map(s => { const st = SEV[s.severity] || SEV.low; return (
+   500→   500→   500→                        <div key={s.id} className={`rounded-lg border p-3 ${st.bg}`}>
+   501→   501→   501→                          <div className="flex items-start gap-2">{st.icon}<div><p className={`text-sm font-semibold ${st.text}`}>{s.title}</p><p className="text-xs text-muted-foreground mt-1">{s.description}</p></div></div>
+   502→   502→   502→                        </div>
+   503→   503→   503→                      )})}
+   504→   504→   504→                    </CardContent></Card>
+   505→   505→   505→                )}
+   506→   506→   506→                <div className="flex gap-2 flex-wrap">
+   507→   507→   507→                  <div className="relative flex-1 min-w-[200px]"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input value={driveSearch} onChange={e => setDriveSearch(e.target.value)} placeholder="Search files..." className="pl-9" /></div>
+   508→   508→   508→                  <select value={driveFilter} onChange={e => setDriveFilter(e.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm"><option value="all">All</option><option value="trashed">Trash</option>{driveStats.byType && Object.keys(driveStats.byType).map(t => <option key={t} value={t}>{t}</option>)}</select>
+   509→   509→   509→                  {driveSel.size > 0 && <><Badge variant="secondary">{driveSel.size}</Badge><Button variant="destructive" size="sm" className="gap-1" onClick={() => openDelete('drive', `Delete ${driveSel.size} Files`, Array.from(driveSel))}><Trash2 className="h-4 w-4" /></Button><Button variant="outline" size="sm" onClick={() => startBackup(driveFiltered.filter(f => driveSel.has(f.id)), 'drive')} className="gap-1"><ArchiveRestore className="h-4 w-4" /></Button></>}
+   510→   510→   510→                </div>
+   511→   511→   511→                <ScrollArea className="max-h-[500px]"><div className="space-y-2">
+   512→   512→   512→                  {driveFiltered.slice(0, 80).map(f => (
+   513→   513→   513→                    <Card key={f.id} className={`${f.trashed ? 'opacity-50' : ''} ${driveSel.has(f.id) ? 'ring-2 ring-primary' : ''}`}>
+   514→   514→   514→                      <CardContent className="p-3">
+   515→   515→   515→                        <div className="flex items-center gap-3">
+   516→   516→   516→                          <Checkbox checked={driveSel.has(f.id)} onCheckedChange={() => driveToggle(f.id)} />
+   517→   517→   517→                          <div className="flex h-8 w-8 items-center justify-center rounded bg-slate-100 dark:bg-slate-800 shrink-0">{FILE_ICONS[getftype(f.mimeType)] || <File className="h-4 w-4 text-slate-500" />}</div>
+   518→   518→   518→                          <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{f.name}</p><p className="text-[10px] text-muted-foreground">{fmt(f.size)} &middot; {getftype(f.mimeType)}</p></div>
+   519→   519→   519→                          <div className="flex gap-1"><Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-blue-500" onClick={() => downloadFile('drive', f.id, f.name)}><Download className="h-4 w-4" /></Button></div>
+   520→   520→   520→                        </div>
+   521→   521→   521→                      </CardContent>
+   522→   522→   522→                    </Card>
+   523→   523→   523→                  ))}
+   524→   524→   524→                </div></ScrollArea>
+   525→   525→   525→              </>
+   526→   526→   526→            )}
+   527→   527→   527→          </TabsContent>
+   528→   528→   528→
+   529→   529→   529→          {/* ═══ PHOTOS TAB ═══ */}
+   530→   530→   530→          <TabsContent value="photos" className="mt-6 space-y-6">
+   531→   531→   531→            {!photoStats && !scanningPhotos && <div className="flex flex-col items-center py-12 gap-4"><Camera className="h-10 w-10 text-pink-500" /><h2 className="text-xl font-bold">Scan Photos</h2><Button onClick={scanPhotos} size="lg" className="gap-2"><ScanSearch className="h-5 w-5" />Scan Photos</Button></div>}
+   532→   532→   532→            {scanningPhotos && <LoadingSpinner text="Scanning Photos..." />}
+   533→   533→   533→            {photoStats && !scanningPhotos && (
+   534→   534→   534→              <>
+   535→   535→   535→                <div className="grid gap-3 sm:grid-cols-3">
+   536→   536→   536→                  <Card><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Storage</p><p className="text-xl font-bold">{photoStats.totalSizeFormatted}</p><p className="text-[10px] text-muted-foreground">{photoStats.totalPhotos} photos</p></CardContent></Card>
+   537→   537→   537→                  <Card><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Large</p><p className="text-xl font-bold text-orange-600">{photoStats.largePhotos}</p></CardContent></Card>
+   538→   538→   538→                  <Card><CardContent className="p-3"><p className="text-[10px] font-medium text-muted-foreground uppercase">Favorites</p><p className="text-xl font-bold text-yellow-600">{photoStats.favorites}</p></CardContent></Card>
+   539→   539→   539→                </div>
+   540→   540→   540→                {photoSel.size > 0 && <div className="flex gap-2"><Badge variant="secondary">{photoSel.size}</Badge><Button variant="destructive" size="sm" className="gap-1" onClick={() => openDelete('photos', `Delete ${photoSel.size}`, Array.from(photoSel))}><Trash2 className="h-4 w-4" /></Button><Button variant="outline" size="sm" onClick={() => startBackup(photoItems.filter(p => photoSel.has(p.id)), 'photos')} className="gap-1"><ArchiveRestore className="h-4 w-4" /></Button></div>}
+   541→   541→   541→                <ScrollArea className="max-h-[500px]"><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+   542→   542→   542→                  {photoItems.slice(0, 40).map(p => (
+   543→   543→   543→                    <Card key={p.id} className={`overflow-hidden ${photoSel.has(p.id) ? 'ring-2 ring-primary' : ''}`}>
+   544→   544→   544→                      <div className="relative aspect-square bg-slate-100 dark:bg-slate-800">
+   545→   545→   545→                        {p.baseUrl ? <img src={`${p.baseUrl}=w300`} alt={p.filename} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-10 w-10 text-muted-foreground/30" /></div>}
+   546→   546→   546→                        <div className="absolute top-2 left-2"><Checkbox checked={photoSel.has(p.id)} onCheckedChange={() => photoToggle(p.id)} className="bg-white/80 border-slate-300" /></div>
+   547→   547→   547→                        {p.isFavorite && <div className="absolute top-2 right-2"><Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /></div>}
+   548→   548→   548→                      </div>
+   549→   549→   549→                      <CardContent className="p-3"><p className="text-xs font-medium truncate">{p.filename}</p><div className="flex justify-between mt-1"><span className="text-[10px] text-muted-foreground">{fmt(p.size)}</span><Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-blue-500" onClick={() => downloadFile('photos', p.id, p.filename, p.baseUrl)}><Download className="h-3 w-3" /></Button></div></CardContent>
+   550→   550→   550→                    </Card>
+   551→   551→   551→                  ))}
+   552→   552→   552→                </div></ScrollArea>
+   553→   553→   553→              </>
+   554→   554→   554→            )}
+   555→   555→   555→          </TabsContent>
+   556→   556→   556→
+   557→   557→   557→          {/* ═══ WIZARD TAB ═══ */}
+   558→   558→   558→          <TabsContent value="wizard" className="mt-6 space-y-6">
+   559→   559→   559→            <Card>
+   560→   560→   560→              <CardHeader><CardTitle className="flex items-center gap-2"><Wand2 className="h-5 w-5 text-purple-500" />Smart Cleanup Wizard</CardTitle><CardDescription>Choose how much space you want to free. The wizard will create the safest possible plan.</CardDescription></CardHeader>
+   561→   561→   561→              <CardContent className="space-y-4">
+   562→   562→   562→                <div className="flex items-center gap-4">
+   563→   563→   563→                  <Label className="text-sm font-medium whitespace-nowrap">Free up:</Label>
+   564→   564→   564→                  <div className="flex items-center gap-2">
+   565→   565→   565→                    <Button variant={wizardTarget === 0.5 ? 'default' : 'outline'} size="sm" onClick={() => setWizardTarget(0.5)}>500 MB</Button>
+   566→   566→   566→                    <Button variant={wizardTarget === 1 ? 'default' : 'outline'} size="sm" onClick={() => setWizardTarget(1)}>1 GB</Button>
+   567→   567→   567→                    <Button variant={wizardTarget === 2 ? 'default' : 'outline'} size="sm" onClick={() => setWizardTarget(2)}>2 GB</Button>
+   568→   568→   568→                    <Button variant={wizardTarget === 5 ? 'default' : 'outline'} size="sm" onClick={() => setWizardTarget(5)}>5 GB</Button>
+   569→   569→   569→                    <Input type="number" value={wizardTarget} onChange={e => setWizardTarget(Number(e.target.value) || 1)} className="w-20" />
+   570→   570→   570→                    <span className="text-sm text-muted-foreground">GB</span>
+   571→   571→   571→                  </div>
+   572→   572→   572→                  <Button onClick={runWizard} disabled={wizardLoading} className="gap-2 ml-auto"><Rocket className="h-4 w-4" />{wizardLoading ? 'Planning...' : 'Generate Plan'}</Button>
+   573→   573→   573→                </div>
+   574→   574→   574→                {wizardPlan && (
+   575→   575→   575→                  <div className="space-y-3 mt-4">
+   576→   576→   576→                    <div className="flex items-center gap-4 p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200">
+   577→   577→   577→                      <Target className="h-5 w-5 text-purple-500" />
+   578→   578→   578→                      <div><p className="text-sm font-semibold">Can free up to {wizardPlan.totalCanBeFreedFormatted}</p><p className="text-xs text-muted-foreground">Target: {wizardPlan.targetFormatted} &middot; Estimated time: {wizardPlan.estimatedTime}</p></div>
+   579→   579→   579→                    </div>
+   580→   580→   580→                    <div className="space-y-2">
+   581→   581→   581→                      {wizardPlan.steps.map((step: CleanupStep) => (
+   582→   582→   582→                        <Card key={step.id} className="border-slate-200 dark:border-slate-700">
+   583→   583→   583→                          <CardContent className="p-4">
+   584→   584→   584→                            <div className="flex items-start gap-3">
+   585→   585→   585→                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 shrink-0"><span className="text-xs font-bold">{step.order}</span></div>
+   586→   586→   586→                              <div className="flex-1">
+   587→   587→   587→                                <div className="flex items-center gap-2 flex-wrap">
+   588→   588→   588→                                  <span className="text-sm font-semibold">{step.action}</span>
+   589→   589→   589→                                  <Badge className={`text-[10px] px-1.5 ${RISK_COLORS[step.risk] || ''}`}>{step.risk}</Badge>
+   590→   590→   590→                                  <Badge variant="outline" className="text-[10px]">{step.spaceFreedFormatted}</Badge>
+   591→   591→   591→                                </div>
+   592→   592→   592→                                <p className="text-xs text-muted-foreground mt-1">{step.description}</p>
+   593→   593→   593→                                <p className="text-xs text-muted-foreground mt-1">{step.riskExplanation}</p>
+   594→   594→   594→                              </div>
+   595→   595→   595→                              <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => { setDriveSel(new Set(step.fileIds)); setTab('drive') }}>View</Button>
+   596→   596→   596→                            </div>
+   597→   597→   597→                          </CardContent>
+   598→   598→   598→                        </Card>
+   599→   599→   599→                      ))}
+   600→   600→   600→                    </div>
+   601→   601→   601→                  </div>
+   602→   602→   602→                )}
+   603→   603→   603→              </CardContent>
+   604→   604→   604→            </Card>
+   605→   605→   605→          </TabsContent>
+   606→   606→   606→
+   607→   607→   607→          {/* ═══ TOOLS TAB ═══ */}
+   608→   608→   608→          <TabsContent value="tools" className="mt-6 space-y-6">
+   609→   609→   609→            <div className="grid gap-4 sm:grid-cols-2">
+   610→   610→   610→              {/* Cross-service dedup */}
+   611→   611→   611→              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={runDedup}>
+   612→   612→   612→                <CardContent className="p-4">
+   613→   613→   613→                  <div className="flex items-center gap-3 mb-2"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/30"><Copy className="h-5 w-5 text-violet-500" /></div><div><p className="text-sm font-semibold">Cross-Service Dedup</p><p className="text-xs text-muted-foreground">Find duplicates across Gmail, Drive & Photos</p></div></div>
+   614→   614→   614→                  {dedupLoading && <Progress className="h-1 mt-2" />}
+   615→   615→   615→                  {dedupResults && <p className="text-xs text-muted-foreground mt-2">{dedupResults.length} duplicate groups found</p>}
+   616→   616→   616→                </CardContent>
+   617→   617→   617→              </Card>
+   618→   618→   618→
+   619→   619→   619→              {/* Shared with me */}
+   620→   620→   620→              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={loadShared}>
+   621→   621→   621→                <CardContent className="p-4">
+   622→   622→   622→                  <div className="flex items-center gap-3 mb-2"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/30"><Share2 className="h-5 w-5 text-cyan-500" /></div><div><p className="text-sm font-semibold">Shared With Me</p><p className="text-xs text-muted-foreground">Find stale shared files you never open</p></div></div>
+   623→   623→   623→                  {sharedLoading && <Progress className="h-1 mt-2" />}
+   624→   624→   624→                  {sharedFiles && <p className="text-xs text-muted-foreground mt-2">{sharedFiles.length} stale shared files found</p>}
+   625→   625→   625→                </CardContent>
+   626→   626→   626→              </Card>
+   627→   627→   627→
+   628→   628→   628→              {/* AI Importance */}
+   629→   629→   629→              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => { /* Would score all items */ }}>
+   630→   630→   630→                <CardContent className="p-4">
+   631→   631→   631→                  <div className="flex items-center gap-3 mb-2"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30"><Brain className="h-5 w-5 text-emerald-500" /></div><div><p className="text-sm font-semibold">AI Importance Score</p><p className="text-xs text-muted-foreground">Score emails & files by importance (0-100)</p></div></div>
+   632→   632→   632→                </CardContent>
+   633→   633→   633→              </Card>
+   634→   634→   634→
+   635→   635→   635→              {/* Attachment Sync */}
+   636→   636→   636→              <Card className="cursor-pointer hover:shadow-md transition-shadow">
+   637→   637→   637→                <CardContent className="p-4">
+   638→   638→   638→                  <div className="flex items-center gap-3 mb-2"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30"><FileDown className="h-5 w-5 text-amber-500" /></div><div><p className="text-sm font-semibold">Attachment to Drive</p><p className="text-xs text-muted-foreground">Save Gmail attachments to Drive, then delete from Gmail</p></div></div>
+   639→   639→   639→                </CardContent>
+   640→   640→   640→              </Card>
+   641→   641→   641→
+   642→   642→   642→              {/* Schedules */}
+   643→   643→   643→              <Card className="sm:col-span-2">
+   644→   644→   644→                <CardContent className="p-4">
+   645→   645→   645→                  <div className="flex items-center justify-between mb-3">
+   646→   646→   646→                    <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30"><Timer className="h-5 w-5 text-blue-500" /></div><div><p className="text-sm font-semibold">Scheduled Auto-Cleanup</p><p className="text-xs text-muted-foreground">Set rules to run cleanup automatically</p></div></div>
+   647→   647→   647→                  </div>
+   648→   648→   648→                  <div className="flex gap-2 flex-wrap">
+   649→   649→   649→                    <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={loadSchedules}><RefreshCw className="h-3 w-3" />Load Schedules</Button>
+   650→   650→   650→                  </div>
+   651→   651→   651→                  {schedules.length > 0 && (
+   652→   652→   652→                    <div className="space-y-2 mt-3">
+   653→   653→   653→                      {schedules.map((s: any) => (
+   654→   654→   654→                        <div key={s.id} className="flex items-center gap-3 rounded-lg border p-2">
+   655→   655→   655→                          <div className={`h-2 w-2 rounded-full ${s.enabled ? 'bg-green-500' : 'bg-slate-300'}`} />
+   656→   656→   656→                          <span className="text-sm font-medium flex-1">{s.name}</span>
+   657→   657→   657→                          <Badge variant="outline" className="text-[10px]">{s.frequency}</Badge>
+   658→   658→   658→                          <Badge variant="outline" className="text-[10px]">{s.totalCleaned} cleaned</Badge>
+   659→   659→   659→                        </div>
+   660→   660→   660→                      ))}
+   661→   661→   661→                    </div>
+   662→   662→   662→                  )}
+   663→   663→   663→                  {schedules.length === 0 && !schedulesLoading && <p className="text-xs text-muted-foreground mt-2">No schedules configured yet.</p>}
+   664→   664→   664→                </CardContent>
+   665→   665→   665→              </Card>
+   666→   666→   666→            </div>
+   667→   667→   667→
+   668→   668→   668→            {/* Dedup results */}
+   669→   669→   669→            {dedupResults && dedupResults.length > 0 && (
+   670→   670→   670→              <Card><CardHeader className="pb-3"><CardTitle className="text-sm">Cross-Service Duplicates</CardTitle></CardHeader>
+   671→   671→   671→                <CardContent className="space-y-2">
+   672→   672→   672→                  {dedupResults.slice(0, 10).map((g: any) => (
+   673→   673→   673→                    <div key={g.hashSignature} className="flex items-center gap-3 rounded-lg border p-3">
+   674→   674→   674→                      <Copy className="h-4 w-4 text-violet-500 shrink-0" />
+   675→   675→   675→                      <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{g.fileName}</p><p className="text-xs text-muted-foreground">{g.items.length} copies &middot; {fmt(g.fileSize)} each &middot; Save {fmt(g.spaceRecoverable)}</p></div>
+   676→   676→   676→                      <Badge variant="outline" className="text-[10px] shrink-0">{g.services}</Badge>
+   677→   677→   677→                    </div>
+   678→   678→   678→                  ))}
+   679→   679→   679→                </CardContent></Card>
+   680→   680→   680→            )}
+   681→   681→   681→
+   682→   682→   682→            {/* Shared files results */}
+   683→   683→   683→            {sharedFiles && sharedFiles.length > 0 && (
+   684→   684→   684→              <Card><CardHeader className="pb-3"><CardTitle className="text-sm">Stale Shared Files</CardTitle></CardHeader>
+   685→   685→   685→                <CardContent className="space-y-2">
+   686→   686→   686→                  {sharedFiles.slice(0, 10).map((f: any) => (
+   687→   687→   687→                    <div key={f.id} className="flex items-center gap-3 rounded-lg border p-3">
+   688→   688→   688→                      <Share2 className="h-4 w-4 text-cyan-500 shrink-0" />
+   689→   689→   689→                      <div className="flex-1 min-w-0"><p className="text-sm font-medium truncate">{f.name}</p><p className="text-xs text-muted-foreground">From {f.ownerEmail} &middot; {fmt(f.size)} &middot; Not modified in {f.lastAccessedDays}d</p></div>
+   690→   690→   690→                    </div>
+   691→   691→   691→                  ))}
+   692→   692→   692→                </CardContent></Card>
+   693→   693→   693→            )}
+   694→   694→   694→          </TabsContent>
+   695→   695→   695→
+   696→   696→   696→          {/* ═══ HISTORY TAB ═══ */}
+   697→   697→   697→          <TabsContent value="history" className="mt-6 space-y-6">
+   698→   698→   698→            <Card><CardHeader><CardTitle className="text-sm flex items-center gap-2"><History className="h-4 w-4" />Cleanup History & Reports</CardTitle></CardHeader>
+   699→   699→   699→              <CardContent>
+   700→   700→   700→                {reports.length > 0 ? (
+   701→   701→   701→                  <div className="space-y-2">
+   702→   702→   702→                    {reports.map((r: any) => (
+   703→   703→   703→                      <div key={r.id} className="flex items-center gap-3 rounded-lg border p-3">
+   704→   704→   704→                        <div className="flex h-8 w-8 items-center justify-center rounded bg-emerald-100 dark:bg-emerald-900/30"><CheckCircle2 className="h-4 w-4 text-emerald-500" /></div>
+   705→   705→   705→                        <div className="flex-1"><p className="text-sm font-medium">{r.title}</p><p className="text-xs text-muted-foreground">{r.summary}</p></div>
+   706→   706→   706→                        <span className="text-xs text-muted-foreground">{new Date(r.createdAt).toLocaleDateString()}</span>
+   707→   707→   707→                      </div>
+   708→   708→   708→                    ))}
+   709→   709→   709→                  </div>
+   710→   710→   710→                ) : <p className="text-sm text-muted-foreground text-center py-8">No cleanup history yet. Start cleaning to see reports here.</p>}
+   711→   711→   711→              </CardContent>
+   712→   712→   712→            </Card>
+   713→   713→   713→          </TabsContent>
+   714→   714→   714→        </Tabs>
+   715→   715→   715→      </main>
+   716→   716→   716→
+   717→   717→   717→      {/* Delete Dialog */}
+   718→   718→   718→      <Dialog open={deleteDialog.open} onOpenChange={open => setDeleteDialog({ ...deleteDialog, open })}>
+   719→   719→   719→        <DialogContent>
+   720→   720→   720→          <DialogHeader><DialogTitle className="flex items-center gap-2"><ShieldAlert className="h-5 w-5 text-red-500" />Confirm Deletion</DialogTitle><DialogDescription>{deleteDialog.title} — cannot be undone.</DialogDescription></DialogHeader>
+   721→   721→   721→          <div className="rounded-lg bg-red-50 dark:bg-red-950/30 p-4"><ul className="text-xs text-red-700 dark:text-red-300 space-y-1 list-disc list-inside"><li>Items permanently removed</li><li>Cannot be undone</li></ul></div>
+   722→   722→   722→          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+   723→   723→   723→            <Button variant="outline" onClick={() => setDeleteDialog({ ...deleteDialog, open: false })} disabled={isDeleting}>Cancel</Button>
+   724→   724→   724→            <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting} className="gap-2">{isDeleting ? <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</> : <><Trash2 className="h-4 w-4" />Delete</>}</Button>
+   725→   725→   725→          </DialogFooter>
+   726→   726→   726→        </DialogContent>
+   727→   727→   727→      </Dialog>
+   728→   728→   728→
+   729→   729→   729→      {/* Backup Dialog */}
+   730→   730→   730→      <Dialog open={backupDialog} onOpenChange={setBackupDialog}>
+   731→   731→   731→        <DialogContent>
+   732→   732→   732→          <DialogHeader><DialogTitle className="flex items-center gap-2"><ArchiveRestore className="h-5 w-5 text-blue-500" />Backup Before Delete</DialogTitle><DialogDescription>Download a ZIP backup of {backupItems.length} items before deleting.</DialogDescription></DialogHeader>
+   733→   733→   733→          <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 p-4"><p className="text-xs text-blue-700 dark:text-blue-300">The selected files will be bundled into a ZIP archive and downloaded to your device. After that, you can safely delete them.</p></div>
+   734→   734→   734→          <DialogFooter>
+   735→   735→   735→            <Button variant="outline" onClick={() => setBackupDialog(false)}>Cancel</Button>
+   736→   736→   736→            <Button onClick={executeBackup} disabled={backupLoading} className="gap-2">{backupLoading ? <><Loader2 className="h-4 w-4 animate-spin" />Creating ZIP...</> : <><Download className="h-4 w-4" />Download Backup ZIP</>}</Button>
+   737→   737→   737→          </DialogFooter>
+   738→   738→   738→        </DialogContent>
+   739→   739→   739→      </Dialog>
+   740→   740→   740→    </div>
+   741→   741→   741→  )
+   742→   742→   742→}
+   743→   743→   743→

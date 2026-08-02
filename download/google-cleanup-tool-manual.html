@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=720">
+<title>Google Cleanup Tool - User Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+@page {
+    size: 720px 1020px;
+    margin: 0;
+}
+:root {
+    --c-bg: #f8fafc;
+    --c-text: #1e293b;
+    --c-accent: #f97316;
+    --c-accent-dark: #ea580c;
+    --c-blue: #3b82f6;
+    --c-purple: #8b5cf6;
+    --c-green: #22c55e;
+    --c-red: #ef4444;
+    --c-card-bg: #ffffff;
+    --c-muted: #64748b;
+    --c-border: #e2e8f0;
+    --c-code-bg: #f1f5f9;
+}
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 720px;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-wrap: break-word;
+}
+@media screen {
+    html {
+        height: auto;
+        display: flex;
+        justify-content: center;
+        background: #e2e8f0;
+    }
+    body {
+        transform-origin: top center;
+        margin: 20px auto;
+    }
+}
+.cover {
+    width: 720px;
+    height: 1020px;
+    box-sizing: border-box;
+    break-after: page;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #334155 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 60px;
+}
+.cover::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: rgba(249, 115, 22, 0.08);
+}
+.cover::after {
+    content: '';
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.06);
+}
+.cover-badge {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    background: rgba(249, 115, 22, 0.15);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    border-radius: 50px;
+    color: #fb923c;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 40px;
+}
+.cover-icon {
+    position: relative;
+    z-index: 1;
+    width: 96px;
+    height: 96px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 20px 60px rgba(249, 115, 22, 0.3);
+    margin-bottom: 44px;
+}
+.cover-icon svg { width: 48px; height: 48px; color: white; }
+.cover-title {
+    position: relative;
+    z-index: 1;
+    font-family: 'Playfair Display', serif;
+    font-size: 48px;
+    font-weight: 900;
+    color: #ffffff;
+    text-align: center;
+    line-height: 1.25;
+    margin-bottom: 20px;
+}
+.cover-subtitle {
+    position: relative;
+    z-index: 1;
+    font-size: 17px;
+    color: #94a3b8;
+    text-align: center;
+    max-width: 480px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+}
+.cover-meta {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 32px;
+    font-size: 12px;
+    color: #64748b;
+}
+.cover-meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.cover-meta-item span:first-child {
+    font-weight: 700;
+    font-size: 18px;
+    color: #e2e8f0;
+}
+.cover-bottom {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 11px;
+    color: #475569;
+    letter-spacing: 1px;
+}
+.main-content {
+    padding: 50px 60px 40px 60px;
+}
+.chapter-header {
+    break-after: avoid;
+    break-inside: avoid;
+    margin-top: 28px;
+}
+.section-tag {
+    display: inline-block;
+    padding: 4px 14px;
+    background: rgba(249, 115, 22, 0.1);
+    border-radius: 4px;
+    color: var(--c-accent-dark);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+}
+.section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+    margin-bottom: 8px;
+}
+.divider {
+    width: 60px;
+    height: 3px;
+    background: var(--c-accent);
+    border-radius: 2px;
+    margin-bottom: 18px;
+}
+.body-text {
+    font-size: 14px;
+    line-height: 1.75;
+    color: #334155;
+    margin-bottom: 14px;
+}
+.body-text strong { color: #0f172a; font-weight: 600; }
+.callout {
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    break-inside: avoid;
+}
+.callout-tip { background: rgba(34, 197, 94, 0.06); border-left: 4px solid var(--c-green); }
+.callout-warning { background: rgba(249, 115, 22, 0.06); border-left: 4px solid var(--c-accent); }
+.callout-info { background: rgba(59, 130, 246, 0.06); border-left: 4px solid var(--c-blue); }
+.callout-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+.callout-tip .callout-label { color: #16a34a; }
+.callout-warning .callout-label { color: #ea580c; }
+.callout-info .callout-label { color: #2563eb; }
+.callout p { font-size: 13px; line-height: 1.65; color: #334155; margin: 0; }
+.card {
+    background: var(--c-card-bg);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    break-inside: avoid;
+}
+.card-title { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+.card p { font-size: 13px; line-height: 1.6; color: #475569; margin: 0; }
+.step-list { margin: 14px 0; padding: 0; list-style: none; }
+.step-item { display: flex; gap: 14px; margin-bottom: 14px; break-inside: avoid; }
+.step-number {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--c-accent), var(--c-accent-dark));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+}
+.step-content { flex: 1; padding-top: 3px; }
+.step-content p { font-size: 13px; line-height: 1.65; color: #334155; margin: 0; }
+.step-content strong { color: #0f172a; }
+.feature-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 14px 0; }
+.feature-item {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 240px;
+    background: var(--c-card-bg);
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    padding: 16px;
+    break-inside: avoid;
+}
+.feature-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+.fi-orange { background: rgba(249,115,22,0.1); color: #ea580c; }
+.fi-blue { background: rgba(59,130,246,0.1); color: #2563eb; }
+.fi-purple { background: rgba(139,92,246,0.1); color: #7c3aed; }
+.fi-green { background: rgba(34,197,94,0.1); color: #16a34a; }
+.fi-red { background: rgba(239,68,68,0.1); color: #dc2626; }
+.fi-pink { background: rgba(236,72,153,0.1); color: #db2777; }
+.feature-item h4 { font-size: 13px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0; }
+.feature-item p { font-size: 12px; line-height: 1.55; color: #64748b; margin: 0; }
+.manual-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 13px;
+    break-inside: avoid;
+}
+.manual-table th {
+    background: #f1f5f9;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 2px solid var(--c-border);
+}
+.manual-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--c-border);
+    color: #334155;
+    line-height: 1.5;
+    vertical-align: top;
+}
+.manual-table tr:last-child td { border-bottom: none; }
+.risk-badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.risk-safe { background: #dcfce7; color: #166534; }
+.risk-low { background: #fef3c7; color: #92400e; }
+.risk-medium { background: #fed7aa; color: #9a3412; }
+.risk-high { background: #fecaca; color: #991b1b; }
+.toc { margin: 20px 0 10px 0; }
+.toc-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px dotted var(--c-border);
+    font-size: 13px;
+}
+.toc-item span:first-child { color: #334155; font-weight: 500; }
+.toc-item span:last-child { color: var(--c-muted); font-size: 12px; }
+.subsection {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 22px;
+    margin-bottom: 8px;
+}
+.faq-item { margin-bottom: 16px; break-inside: avoid; }
+.faq-q { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+.faq-a { font-size: 13px; line-height: 1.6; color: #475569; }
+.ending {
+    width: 720px;
+    height: 1020px;
+    box-sizing: border-box;
+    break-before: page;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #334155 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 60px;
+}
+.ending-text {
+    position: relative;
+    z-index: 1;
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 16px;
+}
+.ending-sub {
+    position: relative;
+    z-index: 1;
+    font-size: 14px;
+    color: #94a3b8;
+    text-align: center;
+    max-width: 400px;
+    line-height: 1.6;
+}
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+    <div class="cover-badge">User Manual v1.0</div>
+    <div class="cover-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15l2 2 4-4"/></svg>
+    </div>
+    <div class="cover-title">Google Cleanup<br>Tool</div>
+    <div class="cover-subtitle">A comprehensive guide to reclaiming storage across Gmail, Drive, and Photos with smart suggestions, AI-powered insights, and automated cleanup scheduling.</div>
+    <div class="cover-meta">
+        <div class="cover-meta-item"><span>7</span><span>Core Modules</span></div>
+        <div class="cover-meta-item"><span>12</span><span>Tools Covered</span></div>
+        <div class="cover-meta-item"><span>30+</span><span>Tips &amp; Tricks</span></div>
+    </div>
+    <div class="cover-bottom">Google Cleanup Tool &middot; Step-by-Step User Manual</div>
+</div>
+
+<!-- BODY CONTENT -->
+<div class="main-content">
+
+<!-- TABLE OF CONTENTS -->
+<div class="section-tag">Contents</div>
+<div class="section-title" style="font-size:24px; margin-bottom:6px;">Table of Contents</div>
+<div class="divider"></div>
+<div class="toc">
+    <div class="toc-item"><span>Quick Start Guide</span><span>Chapter 1</span></div>
+    <div class="toc-item"><span>Connecting Your Google Account</span><span>Chapter 2</span></div>
+    <div class="toc-item"><span>Overview Dashboard</span><span>Chapter 3</span></div>
+    <div class="toc-item"><span>Gmail Management</span><span>Chapter 4</span></div>
+    <div class="toc-item"><span>Drive Management</span><span>Chapter 5</span></div>
+    <div class="toc-item"><span>Photos Management</span><span>Chapter 6</span></div>
+    <div class="toc-item"><span>Smart Cleanup Wizard</span><span>Chapter 7</span></div>
+    <div class="toc-item"><span>Power Tools</span><span>Chapter 8</span></div>
+    <div class="toc-item"><span>Cleanup History</span><span>Chapter 9</span></div>
+    <div class="toc-item"><span>Tips &amp; Tricks</span><span>Chapter 10</span></div>
+    <div class="toc-item"><span>FAQ &amp; Troubleshooting</span><span>Chapter 11</span></div>
+</div>
+
+<!-- CHAPTER 1: QUICK START -->
+<div class="chapter-header">
+    <div class="section-tag">Chapter 1</div>
+    <div class="section-title">Quick Start Guide</div>
+    <div class="divider"></div>
+</div>
+
+<div class="body-text">Welcome to Google Cleanup Tool. This guide walks you through every feature of the application, from connecting your Google account to advanced AI-powered cleanup automation. Whether you need to quickly free up a few gigabytes or set up an ongoing maintenance routine, this manual covers everything you need.</div>
+
+<div class="callout callout-tip">
+    <div class="callout-label">Quick Start Summary</div>
+    <p>The entire setup takes under two minutes. Connect your account, run a scan, review the results, and delete unwanted items with a single click. For advanced users, the Smart Cleanup Wizard and Power Tools provide deeper control over storage management across all three Google services.</p>
+</div>
+
+<div class="body-text">Before you begin, make sure you have a Google account with access to Gmail, Google Drive, and Google Photos. The application uses OAuth 2.0 to securely connect to your account, meaning you never share your password directly with the tool. All data processing happens in real time, and no personal content is stored on any external servers beyond Google's own infrastructure.</div>
+
+<div class="subsection">Five-Step Quick Start</div>
+
+<div class="step-list">
+    <div class="step-item">
+        <div class="step-number">1</div>
+        <div class="step-content"><p><strong>Open the application</strong> in your web browser. You will see the welcome screen with a "Connect with Google" button and a brief overview of the five core features: Unified Storage, Gmail, Drive, Photos, and Smart AI Cleanup.</p></div>
+    </div>
+    <div class="step-item">
+        <div class="step-number">2</div>
+        <div class="step-content"><p><strong>Click "Connect with Google"</strong> to start the OAuth flow. A Google sign-in window will open. Select the Google account you want to manage, review the permissions (read/write access to Gmail, Drive, and Photos), and click "Allow." The authorization code will be automatically pasted back, or you can copy it manually if needed.</p></div>
+    </div>
+    <div class="step-item">
+        <div class="step-number">3</div>
+        <div class="step-content"><p><strong>Verify the code</strong> if required. Once authenticated, the app will display your email address in the header bar and you will land on the Overview tab. Click "Load Storage Data" to see your unified storage breakdown across Gmail, Drive, and Photos.</p></div>
+    </div>
+    <div class="step-item">
+        <div class="step-number">4</div>
+        <div class="step-content"><p><strong>Scan your services.</strong> Use the Quick Action cards on the Overview page to scan Gmail, Drive, and Photos individually, or jump to the Smart Cleanup Wizard for an AI-generated cleanup plan that targets a specific amount of space to free up.</p></div>
+    </div>
+    <div class="step-item">
+        <div class="step-number">5</div>
+        <div class="step-content"><p><strong>Review, select, and delete (or backup first).</strong> After scanning, browse the results, check the items you want to remove, and click the delete button. A confirmation dialog will appear before anything is permanently removed. You can also download a ZIP backup of selected items before deleting them.</p></div>
+    </div>
+</div>
+
+<div class="callout callout-warning">
+    <div class="callout-label">Important</div>
+    <p>Deletion is permanent for most items. Gmail messages are moved to Trash and permanently deleted after 30 days. Drive files in Trash are permanently removed after 30 days. Photos deleted from your account are moved to Trash for 60 days. Always use the Backup feature before deleting important files.</p>
+</div>
+
+<!-- CHAPTER 2: CONNECTING -->
+<div class="chapter-header">
+    <div class="section-tag">Chapter 2</div>
+    <div class="section-title">Connecting Your Google Account</div>
+    <div class="divider"></div>
+</div>
+
+<div class="body-text">The Google Cleanup Tool uses OAuth 2.0 authentication to securely access your Gmail, Drive, and Photos data. This section covers the two authentication methods available, the permissions requested, and troubleshooting common connection issues.</div>
+
+<div class="subsection">OAuth 2.0 Authentication</div>
+
+<div class="body-text">OAuth 2.0 is an industry-standard protocol that lets you grant third-party applications limited access to your Google account without sharing your password. When you click "Connect with Google," the application redirects you to Google's secure sign-in page. After you choose an account and approve the requested permissions, Google returns an authorization code that the application exchanges for access and refresh tokens. These tokens are stored securely in the application database and used to make API calls on your behalf.</div>
+
+<div class="body-text">The tool requests the following Google API scopes: read and modify access to Gmail (for scanning and deleting emails), read and file-level access to Google Drive (for scanning, downloading, and deleting files), and read-only access to Google Photos (for scanning and analyzing photo storage). The tool also requests your basic profile information (email and name) for account identification.</div>
+
+<div class="callout callout-info">
+    <div class="callout-label">Security Note</div>
+    <p>Your Google credentials are never stored in the application. Only the OAuth tokens are saved, and these can be revoked at any time from your Google Account settings under "Third-party apps with account access." The refresh token is used to automatically obtain new access tokens when the current one expires.</p>
+</div>
+
+<div class="subsection">Manual Code Paste</div>
+
+<div class="body-text">In some environments, the OAuth redirect may not work automatically. For example, if you are using the tool behind a firewall, in a restricted browser, or on a network that blocks pop-up windows, the automatic code exchange may fail. In these cases, the application provides a fallback method: after clicking "Connect with Google," a Google authorization page opens in a new tab. Complete the sign-in flow, then copy the authorization code from the URL or the final page. Paste it into the input field on the application's connect screen and click "Verify" to complete authentication.</div>
+
+<div class="subsection">Disconnecting Your Account</div>
+
+<div class="body-text">To disconnect your Google account, click the "Disconnect" button in the top header bar. This clears all session data, scan results, and cached information from the browser. Note that this does not revoke the OAuth tokens stored in the database. If you want to fully revoke access, go to your Google Account security settings and remove the application from the list of third-party apps. After disconnecting, you can connect a different Google account or the same one again.</div>
+
+<!-- CHAPTER 3: OVERVIEW -->
+<div class="chapter-header">
+    <div class="section-tag">Chapter 3</div>
+    <div class="section-title">Overview Dashboard</div>
+    <div class="divider"></div>
+</div>
+
+<div class="body-text">The Overview tab is the central hub of the Google Cleanup Tool. It provides a unified view of your storage consumption across all three Google services, a storage forecast that predicts when you will run out of space, and quick action buttons to initiate scans for each service. Understanding this dashboard is the key to efficient storage management.</div>
+
+<div class="subsection">Unified Storage Gauge</div>
+
+<div class="body-text">At the top of the Overview page, you will find a large circular gauge displaying your total Google storage usage as a percentage. The gauge changes color based on severity: green when usage is below 70%, orange when between 70% and 85%, and red when above 85%. Inside the gauge, the exact percentage is displayed alongside a "used" label. Below and to the right of the gauge, a breakdown shows the total used space, free space remaining, and individual usage for Gmail (red indicator), Drive (blue indicator), and Photos (pink indicator).</div>
+
+<div class="body-text">Click "Load Storage Data" on your first visit to populate this gauge. The data is fetched from the Google Drive API (which provides the unified storage quota for all three services) and cached for the current session. Subsequent visits to the Overview or Wizard tabs will refresh this data automatically.</div>
+
+<div class="subsection">Storage Forecast</div>
+
+<div class="body-text">When storage data is loaded, a forecast card appears alongside the gauge. This card uses your recent storage growth rate to estimate how many days remain before your storage is full. It displays the projected full date, the weekly growth rate in human-readable format (e.g., "150 MB/week"), and a color-coded severity badge. Four severity levels exist: low (green, comfortable space remaining), medium (yellow, consider cleanup soon), high (orange, active cleanup recommended), and critical (red, storage nearly full, immediate action needed).</div>
+
+<div class="body-text">The forecast also provides a text recommendation based on the severity level. For example, if you are in the "high" category, it may recommend running the Smart Cleanup Wizard or reviewing large files in Drive. These recommendations are generated automatically based on your current usage patterns and growth trajectory.</div>
+
+<div class="callout callout-tip">
+    <div class="callout-label">Tip</div>
+    <p>Check the forecast at least once a week. Storage growth tends to accelerate over time as you accumulate more emails, files, and photos. Early detection of a filling quota gives you more options and reduces the urgency of cleanup decisions.</p>
+</div>
+
+<div class="subsection">Quick Actions</div>
+
+<div class="body-text">Below the storage gauge, four quick action cards provide one-click access to the most common operations. Each card displays an icon, title, description, and a loading state. Click any card to initiate the corresponding action without navigating to a different tab. The four quick actions are:</div>
+
+<div class="feature-grid">
+    <div class="feature-item">
+        <div class="feature-item-icon fi-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
+        <h4>Scan Gmail</h4>
+        <p>Finds junk mail, subscriptions, promotional emails, and sales notifications. Categorises senders and provides unsubscribe links.</p>
+    </div>
+    <div class="feature-item">
+        <div class="feature-item-icon fi-orange"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg></div>
+        <h4>Scan Drive</h4>
+        <p>Discovers large files, duplicates, trashed items, and provides smart suggestions for freeing space in Google Drive.</p>
+    </div>
+    <div class="feature-item">
+        <div class="feature-item-icon fi-pink"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
+        <h4>Scan Photos</h4>
+        <p>Analyses photo storage usage, identifies large and favourited photos, and displays thumbnails for selective management.</p>
+    </div>
+    <div class="feature-item">
+        <div class="feature-item-icon fi-purple"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="m17.8 11.8 1.4 1.4"/><path d="m4.8 4.8 1.4 1.4"/><path d="m11 4.8-1.4 1.4"/><path d="m18.4 4.8-1.4 1.4"/><path d="m4.8 18.4 1.4-1.4"/><path d="M15 14a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg></div>
+        <h4>Smart Cleanup</h4>
+        <p>Jumps directly to the AI-powered Cleanup Wizard where you set a target and get an optimised cleanup plan.</p>
+    </div>
+</div>
+
+<!-- CHAPTER 4: GMAIL -->
+<div class="chapter-header">
+    <div class="section-tag">Chapter 4</div>
+    <div class="section-title">Gmail Management</div>
+    <div class="divider"></div>
+</div>
+
+<div class="body-text">The Gmail tab is designed to help you identify and remove clutter from your inbox. It scans your email senders, categorises them into subscriptions, promotions, sales, and junk, and provides tools for bulk deletion, one-click unsubscribing, and backup-before-delete workflows. For many users, Gmail is the single largest source of accumulated digital clutter, and this tab makes it straightforward to reclaim that space.</div>
+
+<div class="subsection">Running a Gmail Scan</div>
+
+<div class="body-text">Click the "Scan My Gmail" button on the Gmail tab's landing page. The scan analyses your email senders by examining message headers, categorising each sender based on the content of their emails and Gmail's own classification labels. The scan typically takes between 10 and 30 seconds depending on the number of senders in your account. During the scan, a loading spinner is displayed with the text "Scanning Gmail..."</div>
+
+<div class="body-text">When the scan completes, five statistics cards appear at the top of the page: Total Senders, Subscriptions, Promotions, Sales, and Junk/Spam. Each card shows the count for that category and the total number of emails associated with those senders. Below the stats, a full list of all scanned senders is displayed, sorted by email count in descending order.</div>
+
+<div class="subsection">Categories Explained</div>
+
+<table class="manual-table">
+    <thead>
+        <tr><th>Category</th><th>Description</th><th>Risk Level</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><strong>Subscriptions</strong></td><td>Newsletters, mailing lists, and recurring email subscriptions you signed up for. These often accumulate over months or years without being read.</td><td><span class="risk-badge risk-safe">Safe</span></td></tr>
+        <tr><td><strong>Promotions</strong></td><td>Marketing emails, product announcements, and advertising content from businesses. Gmail's own CATEGORY_PROMOTIONS label is used when available.</td><td><span class="risk-badge risk-safe">Safe</span></td></tr>
+        <tr><td><strong>Sales</strong></td><td>Order confirmations, receipts, and commercial transaction emails from online retailers and service providers.</td><td><span class="risk-badge risk-low">Low</span></td></tr>
+        <tr><td><strong>Junk/Spam</strong></td><td>Unsolicited spam, phishing attempts, and emails flagged by Gmail as dangerous or unwanted. These are the safest to delete in bulk.</td><td><span class="risk-badge risk-safe">Safe</span></td></tr>
+    </tbody>
+</table>
+
+<div class="subsection">Filtering and Searching</div>
+
+<div class="body-text">Use the search bar at the top of the sender list to filter by sender name or email address. The search is case-insensitive and works in real time as you type. Additionally, the tab filter lets you switch between "All" senders and individual categories. When a category tab is active, only senders in that category are displayed. The active category tab is highlighted, and a badge shows the count for each category.</div>
+
+<div class="subsection">Selecting and Deleting Senders</div>
+
+<div class="body-text">Each sender row includes a checkbox on the left. Check the senders you want to remove, and a toolbar appears at the top showing the number of selected items, a red delete button, and a backup button. Clicking the delete button opens a confirmation dialog that displays the number of senders that will be affected. Confirm to proceed with deletion, or cancel to return to the list.</div>
+
+<div class="body-text">When you delete a sender, all emails from that sender are moved to Gmail's Trash. They will be permanently deleted after 30 days. If you only want to stop receiving emails from a sender without deleting existing ones, look for the "Unsubscribe" link that appears on sender cards where an unsubscribe URL was detected during the scan.</div>
+
+<div class="callout callout-tip">
+    <div class="callout-label">Tip</div>
+    <p>Start with the Junk category first. These are already flagged as spam by Gmail, so deleting them carries zero risk. Next, move to Subscriptions and Promotions. Use the search bar to find specific senders you no longer want emails from. Always back up important subscription emails (receipts, order confirmations) before deleting the sender entirely.</p>
+</div>
+
+<div class="subsection">Backup Before Delete</div>
+
+<div class="body-text">The backup button (archive icon) in the selection toolbar creates a ZIP file containing all selected emails. This is strongly recommended before any bulk deletion, especially for the Sales category where order confirmations and receipts may be needed for warranty claims or expense reports. The backup process downloads a ZIP archive to your local machine. After downloading the backup, you can proceed with deletion knowing that you have a local copy of everything.</div>
+
+<!-- CHAPTER 5: DRIVE -->
+<div class="chapter-header">
+    <div class="section-tag">Chapter 5</div>
+    <div class="section-title">Drive Management</div>
+    <div class="divider"></div>
+</div>
+
+<div class="body-text">Google Drive is often the largest consumer of storage quota. The Drive tab helps you identify large files, find duplicates, review trashed items, and act on smart space-saving suggestions. This chapter walks you through each feature and explains how to make the most of the Drive management tools.</div>
+
+<div class="subsection">Running a Drive Scan</div>
+
+<div class="body-text">Click "Scan Drive" on the Drive tab's landing page. The scan retrieves a list of all files in your Google Drive, including their names, sizes, MIME types, creation dates, modification dates, trash status, and sharing information. The scan also runs the suggestions engine, which analyses your files and generates specific recommendations for freeing space. Depending on the number of files in your Drive, the scan may take 15 to 60 seconds.</div>
+
+<div class="body-text">After scanning completes, four statistics cards appear: Total Storage (total size of all files), Trash (total size of files in the trash bin), Large Files (count of files over a significant size threshold), and Duplicates (count of duplicate file groups detected). The large files and duplicates counts help you quickly assess the potential for space savings.</div>
+
+<div class="subsection">Smart Suggestions</div>
+
+<div class="body-text">The Smart Suggestions panel appears below the statistics cards when suggestions are available. Each suggestion is displayed as a card with a severity indicator (low, medium, high, or critical), a title, and a description. Common suggestions include emptying the trash, removing duplicate files, archiving old files, and exporting Google Docs formats to reduce storage. Suggestions are generated based on an analysis of your Drive contents and are ranked by potential space savings.</div>
+
+<div class="callout callout-info">
+    <div class="callout-label">Note</div>
+    <p>Suggestions are read-only recommendations. They do not perform any actions automatically. You must manually select files and use the delete or backup buttons to act on the suggestions. This design ensures you remain in full control of what gets removed from your Drive.</p>
+</div>
+
+<div class="subsection">Filtering and Sorting</div>
+
+<div class="body-text">The Drive file list supports two filtering mechanisms. The search bar filters files by name (case-insensitive). The dropdown filter next to the search bar lets you filter by file type (PDF, document, spreadsheet, image, video, audio, archive, etc.) or show only trashed files. Files in the list are sorted by size in descending order by default, so the largest files appear at the top. This makes it easy to identify the biggest space consumers at a glance.</div>
+
+<div class="body-text">Trashed files appear with reduced opacity in the list, making them visually distinct from active files. Each file row shows the file name, size (in human-readable format), file type, and a download button. Clicking the download button downloads the file directly to your local machine without requiring a separate Google Drive login.</div>
+
+<div class="subsection">Selection, Deletion, and Backup</div>
+
+<div class="body-text">Use checkboxes to select individual files, then use the toolbar that appears to delete or back up selected files. Deletion moves files to the Google Drive trash. If the files are already in trash, deletion is permanent. The backup feature creates a ZIP archive of all selected files and downloads it to your machine. This is especially useful for large files that you want to keep a local copy of before removing them from the cloud.</div>
+
+<div class="callout callout-tip">
+    <div class="callout-label">Tip</div>
+    <p>Sort by size, select the top 10 largest files, back them up, then delete them. This single workflow can free up more storage than any other single action. Focus on files you have not opened in over six months, as these are least likely to be needed in the cloud.</p>
+</div>
+
+<!-- CHAPTER 6: PHOTOS -->
+<div class="chapter-header">
+    <div class="section-tag">Chapter 6</div>
+    <div class="section-title">Photos Management</div>
+    <div class="divider"></div>
+</div>
+
+<div class="body-text">Google Photos provides unlimited storage for "high quality" (compressed) photos but uses your Google storage quota for "original quality" photos and videos. The Photos tab helps you identify which photos are consuming the most space, distinguish between important photos and old screenshots, and manage your photo library efficiently.</div>
+
+<div class="subsection">Scanning Photos</div>
+
+<div class="body-text">Click "Scan Photos" to begin the analysis. The scan retrieves your photo metadata including filenames, sizes, dimensions, creation dates, favourite status, and whether each item is a screenshot. Three statistics cards appear after scanning: total storage used (with photo count), number of large photos (those exceeding a significant size threshold), and number of favourited photos (marked with a star in Google Photos).</div>
+
+<div class="subsection">Photo Grid View</div>
+
+<div class="body-text">Scanned photos are displayed in a responsive grid layout with thumbnail previews. Each photo card shows the thumbnail image, a checkbox for selection, the filename, file size, and a download button. Favourited photos display a yellow star icon in the top-right corner of their thumbnail. Photos without available thumbnails show a placeholder image icon.</div>
+
+<div class="body-text">The grid is paginated to show up to 40 photos at a time. Use the scroll area to browse through your photo library. Selected photos show a blue ring highlight around the card. After selecting photos, use the delete or backup buttons in the toolbar that appears above the grid.</div>
+
+<div class="callout callout-tip">
+    <div class="callout-label">Tip</div>
+    <p>Pay special attention to old screenshots. The Smart Cleanup Wizard can automatically detect screenshots (based on aspect ratio and file size) that are older than six months. These are typically temporary captures from conversations or error messages that are no longer needed and can free up significant space in bulk.</p>
+</div>
+
+<!-- CHAPTER 7: WIZARD -->
+<div class="chapter-header">
+    <div class="section-tag">Chapter 7</div>
+    <div class="section-title">Smart Cleanup Wizard</div>
+    <div class="divider"></div>
+</div>
+
+<div class="body-text">The Smart Cleanup Wizard is the most powerful feature of the Google Cleanup Tool. Instead of manually browsing through files and deciding what to delete, you simply tell the wizard how much space you want to free, and it generates an optimised, risk-ranked cleanup plan that prioritises the safest actions first. This chapter explains how the wizard works, how to interpret its recommendations, and how to execute the plan.</div>
+
+<div class="subsection">How the Wizard Works</div>
+
+<div class="body-text">The wizard analyses data from all three Google services (Gmail, Drive, and Photos) and generates a prioritised list of cleanup steps. Each step is assigned a risk level: safe, low, medium, or high. The wizard always starts with the safest actions and only includes riskier steps if needed to reach your target. The plan stops once the cumulative space freed meets or exceeds your target, plus one extra step for safety margin.</div>
+
+<div class="body-text">The cleanup plan follows a specific priority order designed to maximise safety while minimising data loss. The eight categories of cleanup actions, in priority order, are described in the table below.</div>
+
+<table class="manual-table">
+    <thead>
+        <tr><th>Priority</th><th>Action</th><th>Risk</th><th>What It Does</th></tr>
+    </thead>
+    <tbody>
+        <tr><td><strong>1</strong></td><td>Empty Trash</td><td><span class="risk-badge risk-safe">Safe</span></td><td>Permanently deletes all files already in your Drive trash. These were previously marked for deletion by you.</td></tr>
+        <tr><td><strong>2</strong></td><td>Remove Duplicates</td><td><span class="risk-badge risk-safe">Safe</span></td><td>Removes duplicate files in Drive, keeping one copy of each set. Duplicates are detected by matching file name and size.</td></tr>
+        <tr><td><strong>3</strong></td><td>Old Unused Files</td><td><span class="risk-badge risk-low">Low</span></td><td>Removes Drive files not modified in over two years. These may be outdated backups or forgotten documents.</td></tr>
+        <tr><td><strong>4</strong></td><td>Large Files (100 MB+)</td><td><span class="risk-badge risk-medium">Medium</span></td><td>Targets Drive files over 100 MB each. Download recommended before deletion.</td></tr>
+        <tr><td><strong>5</strong></td><td>Promotional Emails</td><td><span class="risk-badge risk-safe">Safe</span></td><td>Bulk deletes marketing, newsletter, and promotional emails from Gmail.</td></tr>
+        <tr><td><strong>6</strong></td><td>Junk and Spam</td><td><span class="risk-badge risk-safe">Safe</span></td><td>Permanently removes spam and junk emails flagged by Gmail.</td></tr>
+        <tr><td><strong>7</strong></td><td>Old Screenshots</td><td><span class="risk-badge risk-low">Low</span></td><td>Removes Photos screenshots older than six months, detected by aspect ratio and file size.</td></tr>
+        <tr><td><strong>8</strong></td><td>Large Unoptimized Photos</td><td><span class="risk-badge risk-medium">Medium</span></td><td>Removes Photos originals larger than 10 MB. Consider compressing or downloading first.</td></tr>
+    </tbody>
+</table>
+
+<div class="subsection">Generating a Cleanup Plan</div>
+
+<div class="body-text">To generate a plan, set your target using the preset buttons (500 MB, 1 GB, 2 GB, 5 GB) or type a custom value in the input field. Click "Generate Plan" and wait for the wizard to analyse your data. The process typically takes 10 to 30 seconds. When the plan is ready, a summary card appears showing the total space that can be freed, your target, and an estimated time to complete the cleanup.</div>
+
+<div class="body-text">Each step in the plan is displayed as a card with a numbered order indicator, the action name, a risk badge, the space that would be freed, a description of what the step does, and a "View" button. Clicking "View" navigates you to the relevant tab (Drive or Gmail) with the affected files pre-selected, so you can review them before taking action.</div>
+
+<div class="callout callout-warning">
+    <div class="callout-label">Caution</div>
+    <p>The wizard generates recommendations, not automatic actions. You must review each step and manually confirm deletion. For steps marked "medium" or "high" risk, always download a backup first using the backup button before proceeding with deletion.</p>
+</div>
+
+<!-- CHAPTER 8: POWER TOOLS -->
+<div class="chapter-header">
+    <div class="section-tag">Chapter 8</div>
+    <div class="section-title">Power Tools</div>
+    <div class="divider"></div>
+</div>
+
+<div class="body-text">The Tools tab provides five advanced utilities that go beyond basic scanning and deletion. These tools are designed for power users who want deeper insights and more automated workflows. This chapter covers each tool in detail and explains when and how to use them effectively.</div>
+
+<div class="subsection">Cross-Service Deduplication</div>
+
+<div class="body-text">The Cross-Service Dedup tool scans across Gmail, Drive, and Photos simultaneously to find duplicate files that exist in multiple services. For example, the same PDF might be attached to a Gmail thread and also stored in Drive, or a photo might exist in both Drive and Photos. The tool uses file content hashing to detect exact duplicates regardless of where they are stored.</div>
+
+<div class="body-text">After running the scan, duplicate groups are displayed with the file name, file size, number of copies found, total space that could be recovered by keeping only one copy, and the services where the duplicates exist. Click the card to run the dedup scan. Results show up to 10 duplicate groups. For each group, you can decide which copies to keep and which to delete.</div>
+
+<div class="subsection">Shared With Me</div>
+
+<div class="body-text">Files shared with you by other Google account owners still count against the owner's storage quota, not yours. However, identifying stale shared files that you no longer need access to is good practice. The "Shared With Me" tool scans for files shared with you that you have not accessed or modified in a long time (shown as "Not modified in X days"). Each result shows the file name, owner's email, file size, and the number of days since you last accessed it.</div>
+
+<div class="subsection">AI Importance Score</div>
+
+<div class="body-text">The AI Importance Score tool analyses your emails and files and assigns each one a score from 0 to 100 based on multiple factors including how recently the item was accessed, how frequently it is opened, whether it is starred or favourited, the sender's importance (for emails), and the file type (for documents). Items with low scores are candidates for cleanup because they appear to have little ongoing value.</div>
+
+<div class="subsection">Attachment to Drive Sync</div>
+
+<div class="body-text">Gmail attachments can consume significant storage, especially if you receive large files frequently. The "Attachment to Drive" tool identifies large attachments in your Gmail, downloads them to your Google Drive, and then optionally deletes the original emails. This workflow is useful for archiving important attachments (contracts, design files, reports) while keeping your Gmail storage lean.</div>
+
+<div class="subsection">Scheduled Auto-Cleanup</div>
+
+<div class="body-text">The Scheduled Auto-Cleanup tool lets you set up recurring cleanup rules that run automatically. Click "Load Schedules" to view existing schedules. Each schedule entry shows the rule name, frequency (daily, weekly, monthly), enabled/disabled status, and total count of items cleaned so far. You can enable or disable individual schedules, create new rules based on file age, size, type, or sender category, and view the history of automated cleanups.</div>
+
+<div class="callout callout-tip">
+    <div class="callout-label">Pro Tip</div>
+    <p>Set up a weekly schedule that automatically empties your Drive trash and removes emails from the "Junk" category. These are zero-risk actions that prevent stale items from accumulating. Combine this with a monthly schedule for promotional email cleanup to keep your storage usage consistently low.</p>
+</div>
+
+<!-- CHAPTER 9: HISTORY -->
+<div class="chapter-header">
+    <div class="section-tag">Chapter 9</div>
+    <div class="section-title">Cleanup History</div>
+    <div class="divider"></div>
+</div>
+
+<div class="body-text">The History tab provides a log of all cleanup actions performed through the tool. Each entry shows the cleanup type (Gmail, Drive, or Photos), a descriptive title, a summary of what was done, statistics (items affected, space freed), and the date the cleanup was performed. This log helps you track the effectiveness of your cleanup efforts over time and provides an audit trail for reference.</div>
+
+<div class="body-text">If no cleanups have been performed yet, the History tab displays a placeholder message: "No cleanup history yet. Start cleaning to see reports here." As you use the tool to scan, delete, and manage files across services, each major action generates a report entry that appears in this tab. The reports are stored in the application database and persist across sessions.</div>
+
+<div class="body-text">Review your cleanup history periodically to understand your storage patterns. For example, if you notice that Gmail cleanups consistently free up small amounts of space while Drive cleanups yield much larger savings, you can adjust your strategy to focus more heavily on Drive management. The history data also helps you estimate how often you need to run cleanups to stay within your storage quota.</div>
+
+<!-- CHAPTER 10: TIPS & TRICKS -->
+<div class="chapter-header">
+    <div class="section-tag">Chapter 10</div>
+    <div class="section-title">Tips &amp; Tricks</div>
+    <div class="divider"></div>
+</div>
+
+<div class="body-text">This chapter compiles practical tips and tricks from experienced users of the Google Cleanup Tool. These recommendations go beyond the basic feature walkthroughs in previous chapters and provide strategies for maximising storage savings, minimising risk, and building efficient long-term habits.</div>
+
+<div class="subsection">Top 15 Tips for Maximum Impact</div>
+
+<div class="card">
+    <div class="card-title">1. Start with the Wizard for New Users</div>
+    <p>If you are using the tool for the first time, go straight to the Smart Cleanup Wizard and set a target of 2 GB. The wizard will analyse all three services and generate a plan that starts with the safest, highest-impact actions. This gives you an immediate win without needing to understand every tab.</p>
+</div>
+<div class="card">
+    <div class="card-title">2. Empty Trash Before Every Major Cleanup</div>
+    <p>Files in your Drive trash still count against your storage quota until they are permanently deleted (after 30 days). Emptying the trash is a zero-risk action that can free up significant space. Make it the first step of every cleanup session.</p>
+</div>
+<div class="card">
+    <div class="card-title">3. Use the "All" Category in Gmail First</div>
+    <p>When scanning Gmail, start with the "All" tab to see every sender sorted by email count. The top senders are often newsletters and subscription services that generate the most volume. Targeting just the top 5 senders by volume can free up more space than deleting dozens of low-volume junk senders.</p>
+</div>
+<div class="card">
+    <div class="card-title">4. Back Up Before Bulk Deletes, Always</div>
+    <p>The backup feature creates a ZIP file of selected items. Use it every time before clicking delete, especially for Sales emails (receipts, order confirmations) and Drive files you have not reviewed in a long time. A backup takes a few extra seconds but provides complete peace of mind.</p>
+</div>
+<div class="card">
+    <div class="card-title">5. Sort Drive by Size, Not Name</div>
+    <p>The Drive file list defaults to size-descending order. Use this to your advantage. The top 20 files by size often account for the majority of your Drive storage. Focus your cleanup efforts on these large files first for maximum impact with minimum effort.</p>
+</div>
+<div class="card">
+    <div class="card-title">6. Check Storage Forecast Weekly</div>
+    <p>Navigate to the Overview tab at least once a week and load storage data. The forecast tells you how many days remain before your quota fills up. If the forecast shows fewer than 90 days remaining, it is time to run a cleanup cycle.</p>
+</div>
+<div class="card">
+    <div class="card-title">7. Use Search to Find Specific Senders</div>
+    <p>In the Gmail tab, use the search bar to look for specific company names or email domains. For example, searching "linkedin" will show all LinkedIn notification senders. Searching a retailer's name will show all their email addresses. This is faster than scrolling through the entire list.</p>
+</div>
+<div class="card">
+    <div class="card-title">8. Download, Then Delete Large Files</div>
+    <p>For Drive files over 100 MB, use the download button to save a local copy first, then delete the cloud version. This keeps the file accessible on your local machine while freeing up cloud storage. Consider investing in an external hard drive for archival storage.</p>
+</div>
+<div class="card">
+    <div class="card-title">9. Combine Dedup with Manual Review</div>
+    <p>Run Cross-Service Dedup to find duplicates, but do not delete everything automatically. Review each duplicate group to ensure you keep the copy in the most appropriate location (e.g., keep the Drive version rather than the Gmail attachment version for easier future access).</p>
+</div>
+<div class="card">
+    <div class="card-title">10. Schedule Automatic Trash Emptying</div>
+    <p>Set up a weekly auto-cleanup schedule that empties your Drive trash. This prevents trashed files from sitting in your storage quota for 30 days. It is a zero-risk action that keeps your storage baseline clean without any manual intervention.</p>
+</div>
+<div class="card">
+    <div class="card-title">11. Prioritise Screenshots in Photos</div>
+    <p>Screenshots are among the most common space-wasters in Google Photos. The Smart Cleanup Wizard automatically detects screenshots (based on 16:9 or 16:10 aspect ratio and small file size) that are older than six months. These are almost always safe to delete.</p>
+</div>
+<div class="card">
+    <div class="card-title">12. Review Shared Files Periodically</div>
+    <p>Use the "Shared With Me" tool every few months to identify stale shared files. If you have not accessed a shared file in over a year, consider notifying the owner that you no longer need access. This helps the owner manage their own storage and keeps your shared file list clean.</p>
+</div>
+<div class="card">
+    <div class="card-title">13. Use the Drive Trash Filter</div>
+    <p>In the Drive tab, use the filter dropdown to show only trashed files. This gives you a clear view of everything sitting in trash waiting for permanent deletion. If you are sure you no longer need these files, select them all and delete them permanently to reclaim the space immediately.</p>
+</div>
+<div class="card">
+    <div class="card-title">14. Understand Risk Levels in the Wizard</div>
+    <p>The wizard assigns risk levels to each cleanup step for a reason. "Safe" steps (empty trash, remove duplicates) carry no risk of data loss. "Low" risk steps (old files, old screenshots) have minimal risk but may occasionally remove files you forgot about. "Medium" risk steps (large files, unoptimized photos) require backup before deletion.</p>
+</div>
+<div class="card">
+    <div class="card-title">15. Track Your Progress with History</div>
+    <p>After each cleanup session, visit the History tab to see a summary of what was done and how much space was freed. Over time, this builds a picture of your cleanup patterns and helps you estimate how frequently you need to run cleanups to stay within quota.</p>
+</div>
+
+<div class="subsection">Efficient Workflows</div>
+
+<div class="callout callout-info">
+    <div class="callout-label">Recommended Weekly Workflow</div>
+    <p>Load storage data on the Overview tab and check the forecast. If the forecast shows declining remaining days, scan the service that is growing fastest (usually Drive or Gmail). Review the results, delete obvious clutter, and back up anything important. This 10-minute weekly routine prevents storage emergencies.</p>
+</div>
+<div class="callout callout-info">
+    <div class="callout-label">Recommended Monthly Workflow</div>
+    <p>Run the Smart Cleanup Wizard with a target that brings your usage back below 70%. Review each wizard step, back up medium-risk items, execute the plan. Then run Cross-Service Dedup to catch any duplicates the wizard may have missed. Check the History tab to see your monthly savings.</p>
+</div>
+<div class="callout callout-info">
+    <div class="callout-label">Recommended Quarterly Workflow</div>
+    <p>Review all shared files using the "Shared With Me" tool. Run AI Importance Score to identify your least-valued files across all services. Set up or adjust scheduled auto-cleanup rules based on your usage patterns. Download a complete backup of critical files for offline archival.</p>
+</div>
+
+<!-- CHAPTER 11: FAQ -->
+<div class="chapter-header">
+    <div class="section-tag">Chapter 11</div>
+    <div class="section-title">FAQ &amp; Troubleshooting</div>
+    <div class="divider"></div>
+</div>
+
+<div class="faq-item">
+    <div class="faq-q">Is my Google account safe when using this tool?</div>
+    <div class="faq-a">Yes. The tool uses OAuth 2.0, which means you never share your Google password. You grant specific, limited permissions (read/write for Gmail and Drive, read-only for Photos) that can be revoked at any time from your Google Account settings. All API calls are made directly to Google's servers, and no email content or file data is stored by the application.</div>
+</div>
+<div class="faq-item">
+    <div class="faq-q">Can I undo a deletion?</div>
+    <div class="faq-a">Gmail deletions move emails to Trash, where they remain for 30 days before permanent removal. You can recover them from Gmail's Trash folder during that window. Drive deletions also move files to Trash for 30 days. Photos deletions go to Trash for 60 days. After the Trash period, deletions are permanent. This is why the backup feature is strongly recommended before any bulk deletion.</div>
+</div>
+<div class="faq-item">
+    <div class="faq-q">Why does the scan take so long?</div>
+    <div class="faq-a">Scan duration depends on the number of items in your account. Gmail scans are typically fastest (10-30 seconds) because they analyse sender-level data rather than individual emails. Drive scans can take 15-60 seconds depending on file count. Photos scans depend on the size of your photo library. If scans consistently time out, check your internet connection and ensure Google API quotas have not been exceeded.</div>
+</div>
+<div class="faq-item">
+    <div class="faq-q">What does "Token expired. Please reconnect" mean?</div>
+    <div class="faq-a">OAuth access tokens expire periodically (usually after one hour). The tool automatically uses a refresh token to obtain a new access token when the current one expires. If the refresh token itself has been revoked (for example, if you changed your Google password or revoked the app's access), you will need to disconnect and reconnect your account to establish a new OAuth session.</div>
+</div>
+<div class="faq-item">
+    <div class="faq-q">The storage forecast seems inaccurate. Why?</div>
+    <div class="faq-a">The forecast is based on recent storage growth trends and may not account for seasonal variations (such as receiving large files during holidays) or one-time events (uploading a video project). Treat the forecast as a general guide rather than an exact prediction. Checking it regularly gives you a better trend line over time.</div>
+</div>
+<div class="faq-item">
+    <div class="faq-q">Can I use this tool with multiple Google accounts?</div>
+    <div class="faq-a">The tool manages one Google account at a time per browser session. To switch accounts, click "Disconnect" in the header, then connect with a different Google account. Each account's data, scan results, and cleanup history are stored independently in the application database.</div>
+</div>
+<div class="faq-item">
+    <div class="faq-q">What happens if I close the browser during a scan?</div>
+    <div class="faq-a">Closing the browser during a scan does not cause any data loss. The scan is a read-only operation that fetches data from Google's servers. However, the scan results are only stored in the browser's memory (React state), so you will need to re-run the scan after reopening the application. No changes are made to your Google account until you explicitly click a delete button.</div>
+</div>
+<div class="faq-item">
+    <div class="faq-q">How does the duplicate detection work?</div>
+    <div class="faq-a">The tool uses file name and file size as the primary duplicate detection method. Files with identical names and sizes are grouped together as potential duplicates. The Cross-Service Dedup tool extends this across Gmail, Drive, and Photos by comparing attachment hashes, file content hashes, and photo metadata. Note that this method may occasionally group different files that happen to share the same name and size; review results before deleting.</div>
+</div>
+
+</div>
+
+<!-- ENDING PAGE -->
+<div class="ending">
+    <div class="ending-text">Clean Smarter,<br>Not Harder.</div>
+    <div class="ending-sub">Your Google storage is a finite resource. With the right tools and habits, you can keep it organised, optimised, and under control. Refer to this manual whenever you need a refresher on any feature.</div>
+</div>
+
+</body>
+</html>

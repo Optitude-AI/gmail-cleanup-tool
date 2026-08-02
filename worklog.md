@@ -234,3 +234,36 @@ Server-side logging preserved via `console.error`; client only sees generic mess
 - `bun run lint` — 0 errors, 0 warnings
 - `rg ':\s*any\b|as\s+any\b|<any>' src/` — 0 matches (only `any` in comments/strings)
 
+---
+
+## Phase 5: User Manual Document Generation
+
+### Deliverables
+
+| File | Path | Pages | Words |
+|------|------|-------|-------|
+| PDF Manual | `/home/z/my-project/download/google-cleanup-tool-manual.pdf` | 20 | ~5,661 |
+| HTML Source | `/home/z/my-project/download/google-cleanup-tool-manual.html` | 20 | ~5,661 |
+
+### Manual Contents (11 Chapters)
+
+1. **Quick Start Guide** — Five-step quick start walkthrough
+2. **Connecting Your Google Account** — OAuth 2.0 auth, manual code paste, disconnect
+3. **Overview Dashboard** — Storage gauge, forecast, quick actions
+4. **Gmail Management** — Scan, categories, filtering, deletion, backup
+5. **Drive Management** — Scan, suggestions, filtering, trash handling
+6. **Photos Management** — Scan, grid view, thumbnails, selection
+7. **Smart Cleanup Wizard** — Priority order, risk levels, plan generation
+8. **Power Tools** — Cross-service dedup, shared files, AI scoring, attachment sync, schedules
+9. **Cleanup History** — Audit trail, report types
+10. **Tips & Tricks** — 15 pro tips + weekly/monthly/quarterly workflow guides
+11. **FAQ & Troubleshooting** — 8 common questions with detailed answers
+
+### Design
+
+- **Route**: Creative Flow (Playwright + Paged.js)
+- **Page size**: 720px x 1020px
+- **Fonts**: Inter (body) + Playfair Display (headings)
+- **Colors**: Dark slate cover (#0f172a), light body (#f8fafc), orange accent (#f97316)
+- **QA**: Passed (no blank pages, no content overflow, consistent page sizes, fonts embedded, full-bleed cover)
+

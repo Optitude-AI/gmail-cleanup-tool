@@ -31,6 +31,7 @@
     "googleapis": "^173.0.0",
     "lucide-react": "^0.525.0",
     "next": "^16.1.1",
+    "pagedjs": "^0.4.3",
     "prisma": "^6.11.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
