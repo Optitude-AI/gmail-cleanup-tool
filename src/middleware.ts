@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 /** Routes that don't require authentication (public endpoints) */
 const PUBLIC_PATHS = [
   '/api/gmail/auth',
+  '/api/gmail/callback',
   '/api/gmail/status',
 ];
 

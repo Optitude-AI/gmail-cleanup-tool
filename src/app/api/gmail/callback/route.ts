@@ -6,6 +6,14 @@ import { ok, err, validationErr } from '@/lib/api-response';
 
 export async function POST(request: NextRequest) {
   try {
+    // Validate OAuth credentials are configured
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REDIRECT_URI) {
+      return err(
+        'Google OAuth credentials are not configured. Please set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI in your .env file.',
+        503
+      );
+    }
+
     const body = await request.json();
     const { data, error } = validateBody(gmailCallbackSchema, body);
     if (error) {
@@ -37,6 +45,13 @@ export async function POST(request: NextRequest) {
     return ok({ email: account.email, name, accountId: account.id });
   } catch (error: unknown) {
     console.error('Gmail callback error:', error);
-    return err('Operation failed. Please try again.');
+    const message = error instanceof Error ? error.message : '';
+    if (message.includes('invalid_grant') || message.includes('bad_verification_code')) {
+      return err('The authorization code is invalid or has expired. Please try connecting again.', 400);
+    }
+    if (message.includes('redirect_uri_mismatch')) {
+      return err('Redirect URI mismatch. Ensure GOOGLE_REDIRECT_URI in .env matches the one configured in Google Cloud Console.', 400);
+    }
+    return err('Failed to authenticate with Google. Please try again.');
   }
 }

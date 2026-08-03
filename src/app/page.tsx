@@ -99,7 +99,12 @@ export default function GoogleCleanupPage() {
   // ── Auth ──
   const startOAuth = async () => {
     setIsConnecting(true); setError(null)
-    try { const r = await fetch('/api/gmail/auth'); const d = await r.json(); if (d.authUrl) { setAuthUrl(d.authUrl); window.open(d.authUrl, '_blank', 'width=600,height=700') } else setError('Check Google API credentials.') } catch { setError('Failed.') }
+    try {
+      const r = await fetch('/api/gmail/auth'); const d = await r.json()
+      if (d.authUrl) { setAuthUrl(d.authUrl); window.open(d.authUrl, '_blank', 'width=600,height=700') }
+      else if (d.error) { setError(d.error) }
+      else setError('Failed to generate authorization URL.')
+    } catch { setError('Failed to contact the server.') }
     setIsConnecting(false)
   }
   const handleCallback = async () => {
